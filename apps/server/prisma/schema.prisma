@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ════════════════════════════════════════
+// USER
+// ════════════════════════════════════════
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name           String?
+  role           Role      @default(CUSTOMER)
+  defaultAddress String?   @db.Text
+  balance        Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  cart    Cart?
+  orders  Order[]
+  seller  Seller?
+
+  @@map("users")
+}
+
+enum Role {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+// ════════════════════════════════════════
+// SELLER (厂牌/卖家)
+// ════════════════════════════════════════
+model Seller {
+  id           Int          @id @default(autoincrement())
+  userId       Int          @unique
+  storeName    String
+  contactEmail String?
+  contactPhone String?
+  description  String?      @db.Text
+  status       SellerStatus @default(PENDING)
+  balance      Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albums Album[]
+
+  @@map("sellers")
+}
+
+enum SellerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ════════════════════════════════════════
+// ALBUM
+// ════════════════════════════════════════
+model Album {
+  id          Int         @id @default(autoincrement())
+  artist      String
+  title       String
+  year        Int?
+  label       String?
+  country     String?
+  price       Int                       // stored in yuan, e.g. 380 = ¥380
+  badge       String?
+  description String      @db.Text
+  coverUrl    String?
+  gradient    String?
+  slug        String      @unique
+  stock       Int         @default(10)
+  status      AlbumStatus @default(ACTIVE)
+  sellerId    Int?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  seller       Seller?       @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  tracks       Track[]
+  categories   AlbumCategory[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+
+  @@map("albums")
+}
+
+enum AlbumStatus {
+  ACTIVE
+  DELISTED
+}
+
+// ════════════════════════════════════════
+// TRACK
+// ════════════════════════════════════════
+model Track {
+  id        Int     @id @default(autoincrement())
+  albumId   Int
+  title     String
+  duration  String?
+  position  Int
+  isSection Boolean @default(false)
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@map("tracks")
+}
+
+// ════════════════════════════════════════
+// CATEGORY
+// ════════════════════════════════════════
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  slug String @unique
+
+  albums AlbumCategory[]
+
+  @@map("categories")
+}
+
+// ════════════════════════════════════════
+// ALBUM ⇄ CATEGORY (many-to-many)
+// ════════════════════════════════════════
+model AlbumCategory {
+  albumId    Int
+  categoryId Int
+
+  album    Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([albumId, categoryId])
+  @@map("album_categories")
+}
+
+// ════════════════════════════════════════
+// CART
+// ════════════════════════════════════════
+model Cart {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id       Int @id @default(autoincrement())
+  cartId   Int
+  albumId  Int
+  quantity Int @default(1)
+
+  cart  Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@map("cart_items")
+}
+
+// ════════════════════════════════════════
+// ORDER
+// ════════════════════════════════════════
+model Order {
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  status          OrderStatus @default(PENDING)
+  totalAmount     Int
+  shippingAddress String?     @db.Text
+  expiresAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id        Int              @id @default(autoincrement())
+  orderId   Int
+  albumId   Int?
+  quantity  Int
+  unitPrice Int              // snapshot of price at purchase time
+  status    OrderItemStatus  @default(ACTIVE)
+
+  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  album Album? @relation(fields: [albumId], references: [id], onDelete: SetNull)
+
+  @@map("order_items")
+}
+
+enum OrderItemStatus {
+  ACTIVE
+  SHIPPED
+  REFUNDED
+}

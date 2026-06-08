@@ -1,0 +1,30 @@
+node_modules/
+dist/
+dist-ssr/
+.env
+.env.local
+.env.*.local
+uploads/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vite
+*.local
+
+# Misc
+*.pem

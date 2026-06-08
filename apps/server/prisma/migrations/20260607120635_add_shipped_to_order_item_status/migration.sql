@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `order_items` MODIFY `status` ENUM('ACTIVE', 'SHIPPED', 'REFUNDED') NOT NULL DEFAULT 'ACTIVE';

@@ -1,0 +1,16 @@
+{
+  "name": "vinyl-store",
+  "private": true,
+  "scripts": {
+    "dev:server": "pnpm --filter vinyl-server dev",
+    "dev:customer": "pnpm --filter web-customer dev",
+    "dev:seller": "pnpm --filter web-seller dev",
+    "dev:admin": "pnpm --filter web-admin dev",
+    "dev": "pnpm dev:server & pnpm dev:customer",
+    "build:shared": "pnpm --filter @vinyl-store/shared build",
+    "build:server": "pnpm --filter vinyl-server build",
+    "build:customer": "pnpm --filter web-customer build",
+    "build:seller": "pnpm --filter web-seller build",
+    "build:admin": "pnpm --filter web-admin build"
+  }
+}

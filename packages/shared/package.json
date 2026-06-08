@@ -1,0 +1,23 @@
+{
+  "name": "@vinyl-store/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": "./index.js",
+    "./api": "./api/index.js",
+    "./api/*": "./api/*.js",
+    "./ui": "./ui/index.js",
+    "./ui/*": "./ui/*.vue",
+    "./stores": "./stores/index.js",
+    "./stores/*": "./stores/*.js"
+  },
+  "peerDependencies": {
+    "axios": "^1.0.0",
+    "pinia": "^3.0.0",
+    "vue": "^3.0.0",
+    "vue-router": "^4.0.0"
+  }
+}

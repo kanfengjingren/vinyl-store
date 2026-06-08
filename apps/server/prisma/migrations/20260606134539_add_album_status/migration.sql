@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `albums` ADD COLUMN `status` ENUM('ACTIVE', 'DELISTED') NOT NULL DEFAULT 'ACTIVE';

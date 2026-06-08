@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `order_items` ADD COLUMN `status` ENUM('ACTIVE', 'REFUNDED') NOT NULL DEFAULT 'ACTIVE';
