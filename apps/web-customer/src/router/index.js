@@ -70,6 +70,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/search',
+    name: 'search',
+    component: () => import('../pages/SearchPage.vue'),
+  },
+  {
     path: '/profile',
     name: 'profile',
     component: () => import('../pages/UserProfilePage.vue'),

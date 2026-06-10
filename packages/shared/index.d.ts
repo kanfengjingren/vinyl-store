@@ -179,6 +179,7 @@ export function changePassword(data: { oldPassword: string; newPassword: string 
 // albums
 export function fetchAlbums(params?: QueryAlbumsParams): Promise<PaginatedResponse<Album>>;
 export function fetchAlbumBySlug(slug: string): Promise<Album & { tracks: Track[] }>;
+export function fetchSuggestions(q: string): Promise<Pick<Album, 'id' | 'artist' | 'title' | 'coverUrl' | 'slug'>[]>;
 export function createAlbum(data: CreateAlbumInput): Promise<Album>;
 export function updateAlbum(id: number, data: UpdateAlbumInput): Promise<Album>;
 export function deleteAlbum(id: number): Promise<void>;

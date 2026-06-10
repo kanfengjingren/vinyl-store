@@ -19,6 +19,11 @@ export class AlbumsController {
     return this.albumsService.findMyAlbums(req.user.userId, query.page, query.limit);
   }
 
+  @Get('suggest')
+  suggest(@Query('q') q: string) {
+    return this.albumsService.suggest(q || '');
+  }
+
   @Get()
   findAll(@Query() query: QueryAlbumsDto) {
     return this.albumsService.findAll(query);

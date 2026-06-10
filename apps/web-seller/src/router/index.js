@@ -45,6 +45,7 @@ const router = createRouter({
   routes,
 });
 
+//路由前置守卫
 router.beforeEach((to) => {
   const auth = useSellerAuthStore();
   if (to.meta.requiresAuth && !auth.isLoggedIn) {

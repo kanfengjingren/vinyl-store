@@ -24,3 +24,7 @@ export function updateAlbum(id, data) {
 export function deleteAlbum(id) {
   return api.delete(`/albums/${id}`).then((r) => r.data);
 }
+
+export function fetchSuggestions(q) {
+  return api.get('/albums/suggest', { params: { q } }).then((r) => r.data);
+}

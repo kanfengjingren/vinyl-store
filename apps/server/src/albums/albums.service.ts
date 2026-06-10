@@ -77,6 +77,22 @@ export class AlbumsService {
     };
   }
 
+  async suggest(q: string, limit = 5) {
+    if (!q?.trim()) return [];
+    return this.prisma.album.findMany({
+      where: {
+        status: 'ACTIVE',
+        OR: [
+          { artist: { contains: q.trim() } },
+          { title: { contains: q.trim() } },
+        ],
+      },
+      select: { id: true, artist: true, title: true, coverUrl: true, slug: true },
+      take: limit,
+      orderBy: { id: 'desc' },
+    });
+  }
+
   /** 根据 artist+title 生成 slug，如果重复则追加 -2, -3, ... */
   private async generateSlug(artist: string, title: string): Promise<string> {
     const base = `${artist}-${title}`

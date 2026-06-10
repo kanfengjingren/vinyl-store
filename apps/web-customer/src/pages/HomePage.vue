@@ -2,6 +2,7 @@
   <!-- Hero -->
   <section class="max-w-[1200px] mx-auto pt-20 pb-[60px] px-6 flex flex-col items-center text-center bg-[rgb(205,189,157)]">
     <h1 class="text-[clamp(44px,7vw,80px)] font-semibold tracking-[-0.03em] leading-[1.08] hero-text mb-4">幻觉贸易</h1>
+    <SearchBar class="mb-5" />
     <span class="inline-flex items-center gap-2 bg-apple-accent text-white text-[15px] font-medium px-7 py-3 rounded-full hover:bg-apple-accent-hover hover:scale-105 transition-all cursor-pointer" @click="scrollToCatalog">探索收藏</span>
   </section>
 
@@ -76,6 +77,7 @@ import { useCategoryStore } from '../stores/categories';
 import { useCartStore } from '../stores/cart';
 import AlbumGrid from '../components/album/AlbumGrid.vue';
 import CategoryFilter from '../components/album/CategoryFilter.vue';
+import SearchBar from '../components/search/SearchBar.vue';
 
 const albumStore = useAlbumStore();
 const categoryStore = useCategoryStore();

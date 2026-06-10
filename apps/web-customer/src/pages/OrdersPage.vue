@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-[800px] mx-auto px-6 py-12">
+  <div class="max-w-[1000px] mx-auto px-8 py-12">
     <h1 class="text-[clamp(28px,4vw,36px)] font-semibold tracking-[-0.02em] mb-8">我的订单</h1>
 
     <!-- Tabs -->
