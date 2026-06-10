@@ -15,6 +15,10 @@ export class QueryAlbumsDto {
   country?: string;
 
   @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
   @IsIn(['year', 'price', 'title', 'createdAt'])
   sort?: 'year' | 'price' | 'title' | 'createdAt';
 

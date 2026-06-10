@@ -70,12 +70,7 @@
           默认收货地址
           <span class="text-red-400 ml-0.5">*</span>
         </label>
-        <textarea
-          v-model="address"
-          rows="3"
-          placeholder="请填写您的默认收货地址"
-          class="w-full px-4 py-3 rounded-xl border border-black/15 text-[15px] text-black/80 outline-none focus:border-[rgb(196,147,51)] focus:ring-2 focus:ring-[rgb(196,147,51)]/15 transition-all resize-none placeholder:text-black/25"
-        />
+        <CitySelect v-model="address" v-model:detail="addressDetail" />
         <p v-if="addressError" class="text-red-400 text-sm mt-1.5">{{ addressError }}</p>
       </div>
 
@@ -94,9 +89,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { fetchProfile, updateProfile, recharge, changePassword } from '@vinyl-store/shared'
+import CitySelect from '@vinyl-store/shared/ui/CitySelect'
 
 const profile = ref({})
 const address = ref('')
+const addressDetail = ref('')
 const loading = ref(true)
 const saving = ref(false)
 const saved = ref(false)

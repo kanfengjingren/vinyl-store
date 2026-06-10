@@ -64,11 +64,31 @@ enum SellerStatus {
 }
 
 // ════════════════════════════════════════
+// ARTIST (乐队/艺人)
+// ════════════════════════════════════════
+model Artist {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  photo       String?
+  foundedYear Int?
+  country     String?
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  albums Album[]
+
+  @@map("artists")
+}
+
+// ════════════════════════════════════════
 // ALBUM
 // ════════════════════════════════════════
 model Album {
   id          Int         @id @default(autoincrement())
   artist      String
+  artistId    Int?
   title       String
   year        Int?
   label       String?
@@ -78,6 +98,7 @@ model Album {
   description String      @db.Text
   coverUrl    String?
   gradient    String?
+  color       String?     // dominant color: red/orange/yellow/green/cyan/blue/purple/black/white (9)
   slug        String      @unique
   stock       Int         @default(10)
   status      AlbumStatus @default(ACTIVE)
@@ -86,6 +107,7 @@ model Album {
   updatedAt   DateTime    @updatedAt
 
   seller       Seller?       @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  artistRel    Artist?       @relation(fields: [artistId], references: [id], onDelete: SetNull)
   tracks       Track[]
   categories   AlbumCategory[]
   cartItems    CartItem[]

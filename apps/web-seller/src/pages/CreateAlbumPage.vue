@@ -10,10 +10,41 @@
           <input v-model="form.title" type="text" required
             class="w-full px-3 py-2 border border-black/15 rounded-lg text-sm outline-none focus:border-[rgb(196,147,51)] focus:ring-1 focus:ring-[rgb(196,147,51)]/20 transition-all" />
         </div>
-        <div>
+        <div class="relative">
           <label class="block text-sm font-medium mb-1">艺术家 *</label>
-          <input v-model="form.artist" type="text" required
-            class="w-full px-3 py-2 border border-black/15 rounded-lg text-sm outline-none focus:border-[rgb(196,147,51)] focus:ring-1 focus:ring-[rgb(196,147,51)]/20 transition-all" />
+          <input
+            v-model="artistQuery"
+            type="text"
+            required
+            placeholder="输入乐队/艺人名称搜索..."
+            autocomplete="off"
+            @focus="onArtistFocus"
+            @blur="onArtistBlur"
+            @input="onArtistInput"
+            class="w-full px-3 py-2 border border-black/15 rounded-lg text-sm outline-none focus:border-[rgb(196,147,51)] focus:ring-1 focus:ring-[rgb(196,147,51)]/20 transition-all"
+          />
+          <!-- 下拉联想 -->
+          <ul
+            v-if="showArtistDropdown && (artistSuggestions.length > 0 || artistQuery.trim())"
+            class="absolute z-20 left-0 right-0 mt-1 bg-white border border-black/10 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+          >
+            <li
+              v-for="a in artistSuggestions"
+              :key="a.id"
+              @mousedown.prevent="selectArtist(a)"
+              class="px-3 py-2 text-sm cursor-pointer hover:bg-[rgb(196,147,51)]/10 transition-colors flex items-center gap-2"
+            >
+              <img v-if="a.photo" :src="a.photo" class="w-6 h-6 rounded-full object-cover" />
+              <span>{{ a.name }}</span>
+            </li>
+            <li
+              v-if="artistQuery.trim() && !artistSuggestions.some(a => a.name.toLowerCase() === artistQuery.trim().toLowerCase())"
+              @mousedown.prevent="createNewArtist"
+              class="px-3 py-2 text-sm cursor-pointer hover:bg-[rgb(196,147,51)]/10 transition-colors border-t border-black/5 text-[rgb(196,147,51)]"
+            >
+              ✦ 新建「{{ artistQuery.trim() }}」
+            </li>
+          </ul>
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">价格 (¥) *</label>
@@ -145,6 +176,7 @@ import { reactive, ref, watch, useTemplateRef } from 'vue';
 defineOptions({ name: 'CreateAlbumPage' });
 import { createAlbum, createTracks, uploadCover, uploadAudio } from '@vinyl-store/shared';
 import { fetchCategories, createCategory } from '@vinyl-store/shared';
+import { searchArtists, createArtist } from '@vinyl-store/shared';
 import { onMounted } from 'vue';
 
 const imgInput = useTemplateRef('imgInput');
@@ -152,14 +184,67 @@ const previewUrl = ref('');
 const coverFile = ref(null);
 
 const initialState = {
-  title: '', artist: '', price: 0, country: '', slug: '',
+  title: '', artist: '', artistId: null, price: 0, country: '', slug: '',
   description: '', year: new Date().getFullYear(), stock: 10,
 };
 
 const form = reactive({ ...initialState });
 
+// --- Artist combobox ---
+const artistQuery = ref('');
+const artistSuggestions = ref([]);
+const showArtistDropdown = ref(false);
+let artistDebounceTimer = null;
+
+function onArtistFocus() {
+  showArtistDropdown.value = true;
+  if (artistQuery.value.trim()) searchArtistsDebounced(artistQuery.value.trim());
+}
+
+function onArtistBlur() {
+  // 延迟关闭，让 mousedown 先触发
+  setTimeout(() => { showArtistDropdown.value = false; }, 150);
+}
+
+function onArtistInput() {
+  showArtistDropdown.value = true;
+  const q = artistQuery.value.trim();
+  if (!q) { artistSuggestions.value = []; return; }
+  clearTimeout(artistDebounceTimer);
+  artistDebounceTimer = setTimeout(() => searchArtistsDebounced(q), 250);
+}
+
+async function searchArtistsDebounced(q) {
+  try {
+    artistSuggestions.value = await searchArtists(q);
+  } catch { artistSuggestions.value = []; }
+}
+
+function selectArtist(artist) {
+  form.artist = artist.name;
+  form.artistId = artist.id;
+  artistQuery.value = artist.name;
+  artistSuggestions.value = [];
+  showArtistDropdown.value = false;
+}
+
+async function createNewArtist() {
+  const name = artistQuery.value.trim();
+  if (!name) return;
+  try {
+    const artist = await createArtist({ name });
+    selectArtist(artist);
+  } catch (err) {
+    // 创建失败时仍保留字符串作为 artist
+    form.artist = name;
+    form.artistId = null;
+    showArtistDropdown.value = false;
+  }
+}
+
 let slugManuallyEdited = false;
-watch([() => form.artist, () => form.title], ([artist, title]) => {
+// slug 跟随 artistQuery（用户正在输入的）变化
+watch([artistQuery, () => form.title], ([artist, title]) => {
   if (slugManuallyEdited) return;
   form.slug = [artist, title]
     .filter(Boolean)
@@ -293,6 +378,8 @@ async function handleSubmit() {
     Object.assign(form, initialState);
     form.year = new Date().getFullYear();
     form.stock = 10;
+    artistQuery.value = '';
+    artistSuggestions.value = [];
     tracks.value = [];
     selectedCats.value = [];
     previewUrl.value = '';

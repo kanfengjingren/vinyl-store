@@ -12,7 +12,8 @@
     "./ui": "./ui/index.js",
     "./ui/*": "./ui/*.vue",
     "./stores": "./stores/index.js",
-    "./stores/*": "./stores/*.js"
+    "./stores/*": "./stores/*.js",
+    "./data/*": "./data/*.js"
   },
   "peerDependencies": {
     "axios": "^1.0.0",

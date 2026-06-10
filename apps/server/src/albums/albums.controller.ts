@@ -6,6 +6,7 @@ import { UpdateAlbumDto } from './dto/update-album.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { ALL_COLORS } from '../common/color';
 
 @Controller('albums')
 export class AlbumsController {
@@ -17,6 +18,11 @@ export class AlbumsController {
   @Get('mine')
   findMyAlbums(@Req() req: any, @Query() query: QueryAlbumsDto) {
     return this.albumsService.findMyAlbums(req.user.userId, query.page, query.limit);
+  }
+
+  @Get('colors')
+  getColors() {
+    return ALL_COLORS;
   }
 
   @Get('suggest')

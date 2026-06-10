@@ -11,7 +11,15 @@
       </span>
     </div>
     <div class="p-4 pb-5 px-[18px]">
-      <p class="text-xs font-medium uppercase tracking-[.04em] text-apple-secondary mb-1">{{ album.artist }}</p>
+      <p class="text-xs font-medium uppercase tracking-[.04em] text-apple-secondary mb-1">
+      <router-link
+        v-if="album.artistInfo?.slug"
+        :to="`/artists/${album.artistInfo.slug}`"
+        @click.stop
+        class="no-underline text-apple-secondary hover:text-apple-accent transition-colors"
+      >{{ album.artist }}</router-link>
+      <span v-else>{{ album.artist }}</span>
+    </p>
       <h3 class="text-base font-semibold tracking-[-0.01em] mb-1 truncate">{{ album.title }}</h3>
       <p class="text-[13px] text-apple-tertiary mb-3">{{ album.year }} &middot; {{ album.country }}</p>
       <div class="flex items-center justify-between">

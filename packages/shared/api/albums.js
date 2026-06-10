@@ -36,3 +36,7 @@ export function fetchCountries() {
 export function fetchSuggestions(q) {
   return api.get('/albums/suggest', { params: { q } }).then((r) => r.data);
 }
+
+export function fetchColors() {
+  return api.get('/albums/colors').then((r) => r.data);
+}

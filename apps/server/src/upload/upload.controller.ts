@@ -8,8 +8,9 @@ import { Roles } from '../auth/roles.decorator';
 
 @Controller('upload')
 export class UploadController {
+  
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SELLER')
+  @Roles('SELLER', 'ADMIN')
   @Post('cover')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -35,7 +36,7 @@ export class UploadController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SELLER')
+  @Roles('SELLER', 'ADMIN')
   @Post('audio')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -58,5 +59,31 @@ export class UploadController {
       return { message: '请上传音频文件 (mp3/flac/wav/ogg, ≤30MB)' };
     }
     return { url: `/uploads/audio/${file.filename}` };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER', 'ADMIN')
+  @Post('artist-photo')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/artists',
+        filename: (_req, file, cb) => {
+          const ext = file.originalname.split('.').pop();
+          cb(null, `${randomUUID()}.${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        cb(null, allowed.includes(file.mimetype));
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  uploadArtistPhoto(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      return { message: '请上传图片文件 (jpg/png/webp/gif, ≤5MB)' };
+    }
+    return { url: `/uploads/artists/${file.filename}` };
   }
 }

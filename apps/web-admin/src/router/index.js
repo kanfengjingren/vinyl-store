@@ -21,6 +21,11 @@ const routes = [
         name: 'seller-review',
         component: () => import('../pages/SellerReviewPage.vue'),
       },
+      {
+        path: 'artists',
+        name: 'artist-manage',
+        component: () => import('../pages/ArtistManagePage.vue'),
+      },
     ],
   },
 ];

@@ -7,3 +7,4 @@ export * from './categories';
 export * from './upload';
 export * from './admin';
 export * from './wallet';
+export * from './artists';

@@ -5,9 +5,13 @@ export class CreateAlbumDto {
     @IsString()
     title!: string;
 
-    @IsNotEmpty({ message: '乐队名称不能为空' })
+    @IsOptional()
     @IsString()
-    artist!: string;
+    artist?: string;
+
+    @IsOptional()
+    @IsNumber()
+    artistId?: number;
 
     @IsOptional()
     @IsString()

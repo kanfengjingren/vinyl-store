@@ -45,6 +45,7 @@ const router = useRouter();
 
 const navItems = [
   { to: '/sellers', label: '卖家审核' },
+  { to: '/artists', label: '乐队管理' },
 ];
 
 function handleLogout() {

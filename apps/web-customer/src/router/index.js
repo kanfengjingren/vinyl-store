@@ -35,6 +35,11 @@ const routes = [
     component: () => import('../pages/AlbumDetailPage.vue'),
   },
   {
+    path: '/artists/:slug',
+    name: 'artist',
+    component: () => import('../pages/ArtistPage.vue'),
+  },
+  {
     path: '/cart',
     name: 'cart',
     component: () => import('../pages/CartPage.vue'),

@@ -10,6 +10,10 @@ export class UpdateAlbumDto {
   artist?: string;
 
   @IsOptional()
+  @IsNumber()
+  artistId?: number;
+
+  @IsOptional()
   @IsString()
   coverUrl?: string;
 

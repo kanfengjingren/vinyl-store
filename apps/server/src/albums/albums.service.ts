@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { QueryAlbumsDto } from './dto/query-albums.dto';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
+import { extractColorFromImage } from '../common/color';
+import * as path from 'path';
 
 @Injectable()
 export class AlbumsService {
@@ -21,6 +23,10 @@ export class AlbumsService {
       where.country = country;
     }
 
+    if (query.color) {
+      where.color = query.color;
+    }
+
     if (search) {
       where.OR = [
         { artist: { contains: search } },
@@ -37,6 +43,7 @@ export class AlbumsService {
       this.prisma.album.findMany({
         where,
         include: {
+          artistRel: { select: { id: true, name: true, slug: true } },
           categories: { include: { category: true } },
           _count: { select: { tracks: true } },
         },
@@ -48,8 +55,9 @@ export class AlbumsService {
     ]);
 
     return {
-      data: albums.map(({ categories, _count, ...album }) => ({
+      data: albums.map(({ categories, _count, artistRel, ...album }) => ({
         ...album,
+        artistInfo: artistRel,
         categories: categories.map((ac) => ac.category),
         trackCount: _count.tracks,
       })),
@@ -66,6 +74,7 @@ export class AlbumsService {
     const album = await this.prisma.album.findUnique({
       where: { slug },
       include: {
+        artistRel: { select: { id: true, name: true, slug: true, photo: true } },
         tracks: { orderBy: { position: 'asc' } },
         categories: { include: { category: true } },
       },
@@ -75,8 +84,10 @@ export class AlbumsService {
       throw new NotFoundException(`Album "${slug}" not found`);
     }
 
+    const { artistRel, ...rest } = album;
     return {
-      ...album,
+      ...rest,
+      artistInfo: artistRel,
       categories: album.categories.map((ac) => ac.category),
     };
   }
@@ -101,7 +112,10 @@ export class AlbumsService {
           { title: { contains: q.trim() } },
         ],
       },
-      select: { id: true, artist: true, title: true, coverUrl: true, slug: true },
+      select: {
+        id: true, artist: true, title: true, coverUrl: true, slug: true,
+        artistRel: { select: { id: true, name: true, slug: true } },
+      },
       take: limit,
       orderBy: { id: 'desc' },
     });
@@ -130,14 +144,24 @@ export class AlbumsService {
     if (!seller) throw new ForbiddenException('只有已入驻的卖家才能上架专辑');
     if (seller.status !== 'APPROVED') throw new ForbiddenException('卖家审核通过后才能上架专辑');
 
-    let slug = body.slug?.trim() || await this.generateSlug(body.artist, body.title);
+    // 如果传了 artistId，从 Artist 表取 name 填充 artist 字符串（向后兼容）
+    let artistName = body.artist;
+    if (!artistName && body.artistId) {
+      const artist = await this.prisma.artist.findUnique({ where: { id: body.artistId } });
+      if (artist) artistName = artist.name;
+    }
+
+    let slug = body.slug?.trim() || await this.generateSlug(artistName || 'unknown', body.title);
+
+    const coverUrl = body.coverUrl ?? '';
 
     // 重试最多 3 次，避免竞态条件导致的 slug 冲突
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        return await this.prisma.album.create({
+        const album = await this.prisma.album.create({
           data: {
-            artist: body.artist,
+            artist: artistName || 'Unknown',
+            artistId: body.artistId ?? null,
             title: body.title,
             year: body.year ?? null,
             price: body.price,
@@ -146,7 +170,7 @@ export class AlbumsService {
             country: body.country ?? '',
             badge: body.badge ?? '',
             description: body.description ?? '',
-            coverUrl: body.coverUrl ?? '',
+            coverUrl,
             gradient: body.gradient ?? '',
             label: seller.storeName,
             sellerId: seller.id,
@@ -156,6 +180,22 @@ export class AlbumsService {
               : undefined,
           },
         });
+
+        // 异步提取封面颜色（不阻塞返回）
+        if (coverUrl) {
+          const filePath = path.join(__dirname, '..', '..', '..', coverUrl);
+          extractColorFromImage(filePath).then((color) => {
+            if (color) {
+              this.prisma.album.update({ where: { id: album.id }, data: { color } }).catch((e) => {
+                console.error('更新 album.color 失败:', e.message);
+              });
+            }
+          }).catch((e) => {
+            console.error('提取封面颜色失败:', e.message);
+          });
+        }
+
+        return album;
       } catch (err: any) {
         if (err?.code === 'P2002' && attempt < 2) {
           slug = `${slug.replace(/-\\d{13}$/, '')}-${Date.now()}`;
@@ -203,6 +243,7 @@ export class AlbumsService {
       this.prisma.album.findMany({
         where,
         include: {
+          artistRel: { select: { id: true, name: true, slug: true } },
           categories: { include: { category: true } },
           _count: { select: { tracks: true } },
         },
@@ -214,8 +255,9 @@ export class AlbumsService {
     ]);
 
     return {
-      data: albums.map(({ categories, _count, ...album }) => ({
+      data: albums.map(({ categories, _count, artistRel, ...album }) => ({
         ...album,
+        artistInfo: artistRel,
         categories: categories.map((ac) => ac.category),
         trackCount: _count.tracks,
       })),
