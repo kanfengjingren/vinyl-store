@@ -1,49 +1,62 @@
 import { Controller, Post, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { randomUUID } from 'crypto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
 
-// @UseGuards(JwtAuthGuard, RolesGuard)
-// @Roles(Role.ADMIN)
-@Controller('upload')   //   /api/upload/cover
+@Controller('upload')
 export class UploadController {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER')
   @Post('cover')
-  
-  //拦截器 FileInterceptor用来处理单文件上传
   @UseInterceptors(
     FileInterceptor('file', {
-
-      //存储方式diskStorage存到硬盘
       storage: diskStorage({
-        destination: './uploads/covers',  //存到哪个位置
-
+        destination: './uploads/covers',
         filename: (_req, file, cb) => {
-          const name = file.originalname;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
-          cb(null, name);
+          const ext = file.originalname.split('.').pop();
+          cb(null, `${randomUUID()}.${ext}`);
         },
-
       }),
-
-      //过滤器，白名单
       fileFilter: (_req, file, cb) => {
         const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        cb(null, allowed.includes(file.mimetype) ? true : false);
+        cb(null, allowed.includes(file.mimetype));
       },
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-
-
-  //@UploadedFile() 拦截器拿到就给这个
   uploadCover(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       return { message: '请上传图片文件 (jpg/png/webp/gif, ≤5MB)' };
     }
     return { url: `/uploads/covers/${file.filename}` };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER')
+  @Post('audio')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/audio',
+        filename: (_req, file, cb) => {
+          const ext = file.originalname.split('.').pop();
+          cb(null, `${randomUUID()}.${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['audio/mpeg', 'audio/mp3', 'audio/flac', 'audio/wav', 'audio/ogg', 'audio/x-wav', 'audio/wave'];
+        cb(null, allowed.includes(file.mimetype));
+      },
+      limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
+    }),
+  )
+  uploadAudio(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      return { message: '请上传音频文件 (mp3/flac/wav/ogg, ≤30MB)' };
+    }
+    return { url: `/uploads/audio/${file.filename}` };
   }
 }

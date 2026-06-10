@@ -9,12 +9,16 @@ export class AlbumsService {
   constructor(private prisma: PrismaService) { }
 
   async findAll(query: QueryAlbumsDto) {
-    const { category, search, sort, order = 'asc', page = 1, limit = 12 } = query;
+    const { category, country, search, sort, order = 'asc', page = 1, limit = 12 } = query;
 
     const where: any = { status: 'ACTIVE' };
 
     if (category) {
       where.categories = { some: { category: { slug: category } } };
+    }
+
+    if (country) {
+      where.country = country;
     }
 
     if (search) {
@@ -77,6 +81,16 @@ export class AlbumsService {
     };
   }
 
+  async getCountries() {
+    const rows = await this.prisma.album.findMany({
+      where: { status: 'ACTIVE', country: { not: '' } },
+      select: { country: true },
+      distinct: ['country'],
+      orderBy: { country: 'asc' },
+    });
+    return rows.map((r) => r.country).filter(Boolean);
+  }
+
   async suggest(q: string, limit = 5) {
     if (!q?.trim()) return [];
     return this.prisma.album.findMany({
@@ -116,26 +130,41 @@ export class AlbumsService {
     if (!seller) throw new ForbiddenException('只有已入驻的卖家才能上架专辑');
     if (seller.status !== 'APPROVED') throw new ForbiddenException('卖家审核通过后才能上架专辑');
 
-    const slug = body.slug?.trim() || await this.generateSlug(body.artist, body.title);
+    let slug = body.slug?.trim() || await this.generateSlug(body.artist, body.title);
 
-    return this.prisma.album.create({
-      data: {
-        artist: body.artist,
-        title: body.title,
-        year: body.year ?? null,
-        price: body.price,
-        slug,
-        stock: body.stock ?? 10,
-        country: body.country ?? '',
-        badge: body.badge ?? '',
-        description: body.description ?? '',
-        coverUrl: body.coverUrl ?? '',
-        gradient: body.gradient ?? '',
-        label: seller.storeName,
-        sellerId: seller.id,
-        status: 'ACTIVE',
-      },
-    });
+    // 重试最多 3 次，避免竞态条件导致的 slug 冲突
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await this.prisma.album.create({
+          data: {
+            artist: body.artist,
+            title: body.title,
+            year: body.year ?? null,
+            price: body.price,
+            slug,
+            stock: body.stock ?? 10,
+            country: body.country ?? '',
+            badge: body.badge ?? '',
+            description: body.description ?? '',
+            coverUrl: body.coverUrl ?? '',
+            gradient: body.gradient ?? '',
+            label: seller.storeName,
+            sellerId: seller.id,
+            status: 'ACTIVE',
+            categories: body.categories?.length
+              ? { create: body.categories.map((slug) => ({ category: { connect: { slug } } })) }
+              : undefined,
+          },
+        });
+      } catch (err: any) {
+        if (err?.code === 'P2002' && attempt < 2) {
+          slug = `${slug.replace(/-\\d{13}$/, '')}-${Date.now()}`;
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error('创建专辑失败，请重试');
   }
 
   async updateAlbum(userId: number, id: number, dto: UpdateAlbumDto) {

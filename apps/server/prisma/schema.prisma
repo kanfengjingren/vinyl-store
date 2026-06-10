@@ -17,8 +17,10 @@ model User {
   name           String?
   role           Role      @default(CUSTOMER)
   defaultAddress String?   @db.Text
-  balance        Int       @default(0)
-  createdAt      DateTime  @default(now())
+  balance           Int       @default(0)
+  resetCode         String?
+  resetCodeExpires  DateTime?
+  createdAt         DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   cart    Cart?
@@ -107,6 +109,7 @@ model Track {
   duration  String?
   position  Int
   isSection Boolean @default(false)
+  audioUrl  String?
 
   album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
 

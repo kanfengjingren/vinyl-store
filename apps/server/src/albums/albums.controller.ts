@@ -24,6 +24,11 @@ export class AlbumsController {
     return this.albumsService.suggest(q || '');
   }
 
+  @Get('countries')
+  getCountries() {
+    return this.albumsService.getCountries();
+  }
+
   @Get()
   findAll(@Query() query: QueryAlbumsDto) {
     return this.albumsService.findAll(query);

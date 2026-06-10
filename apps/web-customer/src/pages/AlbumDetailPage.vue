@@ -39,6 +39,16 @@
           <h3 class="text-[17px] font-semibold mb-4">曲目列表</h3>
           <ul class="space-y-1.5">
             <li v-for="track in album.tracks" :key="track.id" :class="['flex items-center gap-3 py-1.5 border-b border-apple-border/40', track.isSection ? 'font-semibold text-sm' : 'text-[15px]']">
+              <button
+                v-if="track.audioUrl"
+                @click="onPlay(track)"
+                class="w-6 h-6 rounded-full bg-[rgb(196,147,51)]/10 hover:bg-[rgb(196,147,51)] text-[rgb(196,147,51)] hover:text-white flex items-center justify-center transition-colors shrink-0"
+                :class="{ 'bg-[rgb(196,147,51)] text-white': player.track?.id === track.id }"
+              >
+                <span class="text-[10px]" v-if="player.track?.id === track.id">⏸</span>
+                <span class="text-[10px] ml-px" v-else>▶</span>
+              </button>
+              <span v-else class="w-6 shrink-0" />
               <span class="text-apple-tertiary w-6 text-right text-[13px] shrink-0">{{ track.isSection ? '' : track.position }}</span>
               <span class="flex-1">{{ track.title }}</span>
               <span v-if="track.duration" class="text-apple-tertiary text-[13px]">{{ track.duration }}</span>
@@ -62,6 +72,7 @@ import { useAlbumStore } from '../stores/albums';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { useModalStore } from '@vinyl-store/shared';
+import { player, usePlayer } from '../stores/player';
 
 const route = useRoute();
 const router = useRouter();
@@ -69,6 +80,7 @@ const albumStore = useAlbumStore();
 const cart = useCartStore();
 const auth = useAuthStore();
 const modal = useModalStore();
+const { play } = usePlayer();
 const album = ref(null);
 const loading = ref(false);
 
@@ -88,6 +100,14 @@ async function load() {
 function coverSrc(url) {
   if (!url) return '';
   return url.startsWith('http') ? url : `/${url}`;
+}
+
+function onPlay(track) {
+  if (player.track?.id === track.id) {
+    // 同一首 → 不操作，让用户通过底部播放器控制
+    return
+  }
+  play(track, album.value?.artist)
 }
 
 async function handleBuy() {

@@ -10,6 +10,7 @@
 
     <Footer v-if="!auth.isAdmin" />
     <CartSidebar />
+    <AudioPlayer />
     <ToastNotification />
     <AppModal />
   <!-- </div> -->
@@ -20,6 +21,7 @@
 import NavBar from './components/layout/NavBar.vue';
 import Footer from './components/layout/Footer.vue';
 import CartSidebar from './components/layout/CartSidebar.vue';
+import AudioPlayer from './components/player/AudioPlayer.vue';
 import { ToastNotification, AppModal } from '@vinyl-store/shared/ui';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth.js';

@@ -24,9 +24,10 @@ export class TracksService {
     if (!album) throw new NotFoundException(`Album #${albumId} not found`);
     
     
-    const data = tracks.map(track => ({
+    const data = tracks.map((track, i) => ({
       ...track,
       albumId,
+      position: track.position ?? (i + 1),
     }));
 
     await this.prisma.track.createMany({ data });

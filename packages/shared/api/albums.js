@@ -25,6 +25,14 @@ export function deleteAlbum(id) {
   return api.delete(`/albums/${id}`).then((r) => r.data);
 }
 
+export function createTracks(albumId, tracks) {
+  return api.post(`/albums/${albumId}/tracks`, { tracks }).then((r) => r.data);
+}
+
+export function fetchCountries() {
+  return api.get('/albums/countries').then((r) => r.data);
+}
+
 export function fetchSuggestions(q) {
   return api.get('/albums/suggest', { params: { q } }).then((r) => r.data);
 }

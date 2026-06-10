@@ -53,4 +53,6 @@ export class CreateAlbumDto {
     @IsNumber()
     stock!: number
 
+    @IsOptional()
+    categories?: string[]
 }

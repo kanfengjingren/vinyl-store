@@ -53,8 +53,35 @@
     <span class="text-[15px] font-medium text-apple-accent no-underline hover:underline cursor-pointer">查看全部 &rarr;</span>
   </div>
 
-  <div class="max-w-[1200px] mx-auto px-6 pb-10">
+  <div class="max-w-[1200px] mx-auto px-6 pb-6">
     <CategoryFilter :categories="categoryStore.list" :active="albumStore.filters.category" @select="albumStore.setFilter('category', $event)" />
+  </div>
+
+  <!-- 排序 + 国家筛选 -->
+  <div class="max-w-[1200px] mx-auto px-6 pb-8 flex items-center gap-4 flex-wrap">
+    <!-- 排序 -->
+    <div class="flex items-center gap-1.5">
+      <span class="text-xs text-black/40 mr-1">排序</span>
+      <button v-for="s in sorts" :key="s.key + s.order" @click="albumStore.setFilter('sort', s.key); albumStore.setFilter('order', s.order)"
+        :class="['text-xs px-3 py-1.5 rounded-full border transition-all',
+          albumStore.filters.sort === s.key && albumStore.filters.order === s.order
+            ? 'bg-[rgb(196,147,51)] text-white border-[rgb(196,147,51)]'
+            : 'bg-white text-black/50 border-black/15 hover:border-[rgb(196,147,51)]/50']">
+        {{ s.label }}
+      </button>
+    </div>
+    <!-- 国家 -->
+    <div class="flex items-center gap-1.5">
+      <span class="text-xs text-black/40 mr-1">国家</span>
+      <select
+        :value="albumStore.filters.country"
+        @change="albumStore.setFilter('country', ($event.target).value)"
+        class="text-xs px-3 py-1.5 rounded-full border border-black/15 bg-white text-black/60 outline-none focus:border-[rgb(196,147,51)] cursor-pointer"
+      >
+        <option value="">全部</option>
+        <option v-for="c in countries" :key="c" :value="c">{{ c }}</option>
+      </select>
+    </div>
   </div>
 
   <div class="max-w-[1200px] mx-auto px-6 pb-20">
@@ -71,7 +98,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue';
-import { fetchAlbums } from '@vinyl-store/shared';
+import { fetchAlbums, fetchCountries } from '@vinyl-store/shared';
 import { useAlbumStore } from '../stores/albums';
 import { useCategoryStore } from '../stores/categories';
 import { useCartStore } from '../stores/cart';
@@ -84,6 +111,14 @@ const categoryStore = useCategoryStore();
 const cart = useCartStore();
 const catalogRef = ref(null);
 const featured = ref(null);
+const countries = ref([]);
+
+const sorts = [
+  { key: 'createdAt', label: '最新', order: 'desc' },
+  { key: 'year', label: '年份', order: 'desc' },
+  { key: 'price', label: '价格↑', order: 'asc' },
+  { key: 'price', label: '价格↓', order: 'desc' },
+];
 
 const featuredInfo = computed(() => {
   if (!featured.value) return '';
@@ -97,6 +132,7 @@ const featuredInfo = computed(() => {
 onMounted(async () => {
   albumStore.loadAlbums();
   categoryStore.load();
+  fetchCountries().then(c => countries.value = c).catch(() => {});
   // 随机选一张专辑作为推荐
   try {
     const data = await fetchAlbums({ limit: 50 });

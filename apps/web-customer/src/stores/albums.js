@@ -7,7 +7,7 @@ export const useAlbumStore = defineStore('albums', () => {
   const current = ref(null);
   const loading = ref(false);
   const pagination = reactive({ page: 1, limit: 12, total: 0, totalPages: 0 });
-  const filters = reactive({ category: '', search: '', sort: '', order: 'asc' });
+  const filters = reactive({ category: '', country: '', search: '', sort: '', order: 'asc' });
 
   async function loadAlbums() {
     loading.value = true;

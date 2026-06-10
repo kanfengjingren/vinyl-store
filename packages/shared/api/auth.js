@@ -51,3 +51,11 @@ export function updateProfile(data) {
 export function changePassword(data) {
   return api.patch('/auth/password', data).then((r) => r.data);
 }
+
+export function forgotPassword(email) {
+  return api.post('/auth/forgot-password', { email }).then((r) => r.data);
+}
+
+export function resetPassword(email, code, newPassword) {
+  return api.post('/auth/reset-password', { email, code, newPassword }).then((r) => r.data);
+}

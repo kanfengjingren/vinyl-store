@@ -11,8 +11,12 @@ export class QueryAlbumsDto {
   search?: string;
 
   @IsOptional()
-  @IsIn(['year', 'price', 'title'])
-  sort?: 'year' | 'price' | 'title';
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  @IsIn(['year', 'price', 'title', 'createdAt'])
+  sort?: 'year' | 'price' | 'title' | 'createdAt';
 
   @IsOptional()
   @IsIn(['asc', 'desc'])
