@@ -42,7 +42,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(__dirname, '..', '..', 'uploads', 'audio'),
+        destination: join(__dirname, '..', '..','..', 'uploads', 'audio'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);
@@ -68,7 +68,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(__dirname, '..', '..', 'uploads', 'artists'),
+        destination: join(__dirname, '..', '..','..', 'uploads', 'artists'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);
