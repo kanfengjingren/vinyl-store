@@ -183,11 +183,11 @@ export class AlbumsService {
 
         // 异步提取封面颜色（不阻塞返回）
         if (coverUrl) {
-          const relativeUrl = coverUrl.startsWith('/') ? coverUrl.slice(1) : coverUrl;
-          const filePath = path.join(__dirname, '..', '..','..', relativeUrl);
-
-          console.log(filePath);
-          
+          // coverUrl 可能是 "/uploads/covers/file.png" 或 "uploads/covers/file.png"
+          // 统一去掉开头的 / 和 uploads/ 前缀，只保留 "covers/file.png"
+          const relativeUrl = coverUrl.replace(/^\/?uploads\//, '');
+          const base = process.env.UPLOADS_BASE_PATH || path.join(__dirname, '..', '..', 'uploads');
+          const filePath = path.join(base, relativeUrl);
           extractColorFromImage(filePath).then((color) => {
             if (color) {
               this.prisma.album.update({ where: { id: album.id }, data: { color } }).catch((e) => {

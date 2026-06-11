@@ -7,16 +7,19 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
+// 上传根目录：优先用 env，否则 fallback 到 apps/server/uploads/
+const uploadsPath = process.env.UPLOADS_BASE_PATH || join(__dirname, '..', '..', 'uploads');
+
 @Controller('upload')
 export class UploadController {
-  
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER', 'ADMIN')
   @Post('cover')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(__dirname, '..', '..','..', 'uploads', 'covers'),
+        destination: join(uploadsPath, 'covers'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);
@@ -42,7 +45,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(__dirname, '..', '..','..', 'uploads', 'audio'),
+        destination: join(uploadsPath, 'audio'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);
@@ -68,7 +71,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(__dirname, '..', '..','..', 'uploads', 'artists'),
+        destination: join(uploadsPath, 'artists'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);

@@ -16,7 +16,7 @@ import { ArtistsModule } from './artists/artists.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: process.env.UPLOADS_BASE_PATH || join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
       serveStaticOptions: {
         index: false,   // 禁用目录索引
