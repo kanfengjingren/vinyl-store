@@ -185,6 +185,9 @@ export class AlbumsService {
         if (coverUrl) {
           const relativeUrl = coverUrl.startsWith('/') ? coverUrl.slice(1) : coverUrl;
           const filePath = path.join(__dirname, '..', '..', relativeUrl);
+
+          console.log(filePath);
+          
           extractColorFromImage(filePath).then((color) => {
             if (color) {
               this.prisma.album.update({ where: { id: album.id }, data: { color } }).catch((e) => {
