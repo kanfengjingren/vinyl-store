@@ -2,6 +2,7 @@ import { Controller, Post, UseGuards, UseInterceptors, UploadedFile } from '@nes
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { randomUUID } from 'crypto';
+import { join } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -15,7 +16,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/covers',
+        destination: join(__dirname, '..', '..', 'uploads', 'covers'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);
@@ -41,7 +42,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/audio',
+        destination: join(__dirname, '..', '..', 'uploads', 'audio'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);
@@ -67,7 +68,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/artists',
+        destination: join(__dirname, '..', '..', 'uploads', 'artists'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);
