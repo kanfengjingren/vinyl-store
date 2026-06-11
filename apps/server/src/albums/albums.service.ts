@@ -184,7 +184,7 @@ export class AlbumsService {
         // 异步提取封面颜色（不阻塞返回）
         if (coverUrl) {
           const relativeUrl = coverUrl.startsWith('/') ? coverUrl.slice(1) : coverUrl;
-          const filePath = path.join(__dirname, '..', '..', relativeUrl);
+          const filePath = path.join(__dirname, '..', '..','..', relativeUrl);
 
           console.log(filePath);
           
