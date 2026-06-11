@@ -16,7 +16,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(__dirname, '..', '..', 'uploads', 'covers'),
+        destination: join(__dirname, '..', '..','..', 'uploads', 'covers'),
         filename: (_req, file, cb) => {
           const ext = file.originalname.split('.').pop();
           cb(null, `${randomUUID()}.${ext}`);
