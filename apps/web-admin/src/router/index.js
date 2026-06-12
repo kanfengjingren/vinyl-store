@@ -26,7 +26,17 @@ const routes = [
         name: 'artist-manage',
         component: () => import('../pages/ArtistManagePage.vue'),
       },
+      {
+        path: ':pathMatch(.*)*',
+        name: 'not-found',
+        component: () => import('../pages/NotFoundPage.vue'),
+      },
     ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../pages/NotFoundPage.vue'),
   },
 ];
 

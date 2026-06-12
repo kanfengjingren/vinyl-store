@@ -36,7 +36,17 @@ const routes = [
         name: 'order-manage',
         component: () => import('../pages/OrderManagePage.vue'),
       },
+      {
+        path: ':pathMatch(.*)*',
+        name: 'not-found',
+        component: () => import('../pages/NotFoundPage.vue'),
+      },
     ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../pages/NotFoundPage.vue'),
   },
 ];
 

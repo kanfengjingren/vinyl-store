@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="flex gap-3 mb-3">
+    <div class="flex gap-[50px] mb-3">
       <select
         :value="province"
         @change="onProvinceChange"

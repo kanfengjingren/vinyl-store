@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vinyl-store/shared": "workspace:*",
+    "animate.css": "^4.1.1",
     "axios": "^1.16.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.34",

@@ -75,6 +75,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/catalog',
+    name: 'catalog',
+    component: () => import('../pages/CatalogPage.vue'),
+  },
+  {
     path: '/search',
     name: 'search',
     component: () => import('../pages/SearchPage.vue'),
@@ -85,6 +90,11 @@ const routes = [
     component: () => import('../pages/UserProfilePage.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../pages/NotFoundPage.vue'),
+  },
 ];
 
 const router = createRouter({
@@ -94,15 +104,26 @@ const router = createRouter({
     if (savedPosition) {
       return savedPosition;
     }
-    return { top: 0 };
+    // 刷新页面后恢复滚动位置
+    const y = sessionStorage.getItem('__scrollY');
+    if (y && !from.name) {
+      sessionStorage.removeItem('__scrollY');
+      return { top: Number(y) };
+    }
   },
 });
 
 router.beforeEach((to) => {
   const auth = useAuthStore();
 
+  // admin 用户只能访问 /admin 下的页面
   if (auth.isAdmin && !to.path.startsWith('/admin') && to.path !== '/login' && to.path !== '/register') {
     return '/admin/album-list';
+  }
+
+  // 需要登录的页面，未登录跳转登录页
+  if (to.meta.requiresAuth && !auth.isLoggedIn) {
+    return '/login';
   }
 });
 

@@ -1,35 +1,39 @@
 <template>
-  <nav class="sticky top-0 z-[100] nav-blur border-b border-black/10 ">
+  <nav class="sticky top-0 z-[100] nav-blur border-b border-black/10 dark:border-neutral-800">
     <div class="max-w-[1200px] mx-auto flex items-center justify-between px-6 h-[52px]">
       <div class="flex items-center gap-10">
-        <router-link to="/" class="text-xl font-semibold tracking-[-0.02em] text-apple-text no-underline">
+        <router-link to="/" class="text-xl font-semibold tracking-[-0.02em] text-apple-text dark:text-white no-underline">
           幻觉贸易
         </router-link>
         <ul v-if="!auth.isAdmin" class="hidden md:flex gap-7 list-none">
           <li><router-link to="/"
-              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">全部唱片</router-link>
+              class="text-[13px] text-apple-secondary dark:text-neutral-400 no-underline hover:text-apple-text dark:hover:text-white transition-colors">全部唱片</router-link>
           </li>
           <li><a href="#"
-              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">新品上架</a>
+              class="text-[13px] text-apple-secondary dark:text-neutral-400 no-underline hover:text-apple-text dark:hover:text-white transition-colors">新品上架</a>
           </li>
           <li><a href="#"
-              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">关于我们</a>
+              class="text-[13px] text-apple-secondary dark:text-neutral-400 no-underline hover:text-apple-text dark:hover:text-white transition-colors">关于我们</a>
           </li>
         </ul>
       </div>
       <div class="flex items-center gap-3">
+        <!-- 主题切换 -->
+        <button @click="theme.toggle()" class="text-[15px] leading-none p-1 hover:scale-110 transition-transform" :title="theme.isDark.value ? '切换到日间模式' : '切换到夜间模式'">
+          {{ theme.isDark.value ? '☀️' : '🌙' }}
+        </button>
         <template v-if="auth.isLoggedIn">
           <router-link v-if="!auth.isAdmin" to="/orders"
-            class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">订单</router-link>
-          <router-link v-if="!auth.isAdmin" to="/profile" class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">{{ auth.user?.name || auth.user?.email }}</router-link>
+            class="text-[13px] text-apple-secondary dark:text-neutral-400 no-underline hover:text-apple-text dark:hover:text-white transition-colors">订单</router-link>
+          <router-link v-if="!auth.isAdmin" to="/profile" class="text-[13px] text-apple-secondary dark:text-neutral-400 no-underline hover:text-apple-text dark:hover:text-white transition-colors">{{ auth.user?.name || auth.user?.email }}</router-link>
           <button @click="handleLogout"
-            class="text-[13px] text-apple-secondary hover:text-apple-text transition-colors">退出</button>
+            class="text-[13px] text-apple-secondary dark:text-neutral-400 hover:text-apple-text dark:hover:text-white transition-colors">退出</button>
           <router-link v-if="auth.isAdmin" to="/admin/album-list"
             class="text-[13px] text-apple-accent no-underline hover:underline">管理</router-link>
         </template>
         <template v-else>
           <router-link to="/login"
-            class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">登录</router-link>
+            class="text-[13px] text-apple-secondary dark:text-neutral-400 no-underline hover:text-apple-text dark:hover:text-white transition-colors">登录</router-link>
         </template>
         <button v-if="auth.isLoggedIn && !auth.isAdmin" @click="cart.toggle()"
           class="relative flex items-center gap-1.5 bg-transparent border-none cursor-pointer text-[13px] font-medium text-apple-text px-3 py-1.5 rounded-full hover:bg-black/5 transition-colors">
@@ -53,10 +57,12 @@
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { useCartStore } from '../../stores/cart';
+import { useTheme } from '../../composables/useTheme';
 
 const auth = useAuthStore();
 const cart = useCartStore();
 const router = useRouter();
+const theme = useTheme();
 
 function handleLogout() {
   auth.logout();
