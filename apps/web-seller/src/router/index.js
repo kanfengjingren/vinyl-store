@@ -37,6 +37,16 @@ const routes = [
         component: () => import('../pages/OrderManagePage.vue'),
       },
       {
+        path: 'chat',
+        name: 'chat',
+        component: () => import('../pages/ChatPage.vue'),
+      },
+      {
+        path: 'stats',
+        name: 'stats',
+        component: () => import('../pages/StatsPage.vue'),
+      },
+      {
         path: ':pathMatch(.*)*',
         name: 'not-found',
         component: () => import('../pages/NotFoundPage.vue'),

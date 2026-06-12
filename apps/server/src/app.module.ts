@@ -12,6 +12,8 @@ import { OrdersModule } from './orders/orders.module';
 import { UploadModule } from './upload/upload.module';
 import { AdminModule } from './admin/admin.module';
 import { ArtistsModule } from './artists/artists.module';
+import { SellersModule } from './sellers/sellers.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { ArtistsModule } from './artists/artists.module';
     UploadModule,
     AdminModule,
     ArtistsModule,
+    SellersModule,
+    ChatModule,
   ],
 })
 export class AppModule { }

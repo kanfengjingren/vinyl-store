@@ -1,41 +1,49 @@
 <template>
-  <div class="max-w-[1000px] mx-auto px-8 py-12">
-    <h1 class="text-[clamp(28px,4vw,36px)] font-semibold tracking-[-0.02em] mb-8">我的订单</h1>
-
-    <!-- Tabs -->
-    <div class="flex gap-1 mb-8 border-b border-black/10">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        @click="activeTab = tab.key"
-        :class="[
-          'px-5 py-2.5 text-sm font-medium transition-colors relative -mb-[1px]',
-          activeTab === tab.key
-            ? 'text-black border-b-2 border-[rgb(196,147,51)]'
-            : 'text-black/50 hover:text-black/80'
-        ]"
-      >
-        {{ tab.label }}
-      </button>
-    </div>
+  <div class="bg-white min-h-screen">
+    <!-- Header -->
+    <section class="w-full flex flex-col items-center text-center pt-20 pb-12 px-6">
+      <h1 class="text-[clamp(32px,5vw,48px)] font-semibold tracking-[-0.02em] text-black mb-2">我的订单</h1>
+      <p class="text-gray-400 text-[15px]">{{ tabs.find(t => t.key === activeTab)?.label }} · {{ filteredOrders.length }} 笔</p>
+    </section>
 
     <!-- Content -->
-    <div v-if="loading" class="text-center py-20 text-black/40">加载中...</div>
-    <div v-else-if="!filteredOrders.length" class="text-center py-20">
-      <p class="text-[17px] text-black/40 mb-4">暂无订单</p>
-      <router-link to="/" class="text-[rgb(196,147,51)] hover:underline text-[15px]">去选购 &rarr;</router-link>
-    </div>
+    <div class="max-w-[1200px] mx-auto px-6 pb-20">
+      <!-- Tabs -->
+      <div class="flex justify-center gap-1 mb-10">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          @click="activeTab = tab.key"
+          :class="[
+            'px-6 py-2 text-sm font-medium transition-colors border-b-2',
+            activeTab === tab.key
+              ? 'text-black border-black'
+              : 'text-gray-400 border-transparent hover:text-gray-600'
+          ]"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
 
-    <div v-else class="space-y-4">
-      <OrderCard
-        v-for="order in filteredOrders"
-        :key="order.id"
-        :order="order"
-        @cancel="onCancel(order)"
-        @pay="onPay(order)"
-        @detail="onDetail(order)"
-        @buyAgain="onBuyAgain(order)"
-      />
+      <!-- Loading / Empty -->
+      <div v-if="loading" class="text-center py-20 text-gray-400 text-sm">加载中...</div>
+      <div v-else-if="!filteredOrders.length" class="text-center py-20">
+        <p class="text-gray-400 text-[15px] mb-4">暂无订单</p>
+        <router-link to="/" class="text-[rgb(196,147,51)] hover:underline text-sm">去选购 &rarr;</router-link>
+      </div>
+
+      <!-- Orders -->
+      <div v-else class="space-y-6">
+        <OrderCard
+          v-for="order in filteredOrders"
+          :key="order.id"
+          :order="order"
+          @cancel="onCancel(order)"
+          @pay="onPay(order)"
+          @detail="onDetail(order)"
+          @buyAgain="onBuyAgain(order)"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -89,7 +97,6 @@ async function onPay(order) {
   } catch (e) {
     alert(e.response?.data?.message || '付款失败')
   }
-  
 }
 
 function onDetail(order) {
@@ -97,7 +104,6 @@ function onDetail(order) {
 }
 
 function onBuyAgain(order) {
-
   const first = order.items[0]
   if (first?.album?.slug) {
     router.push(`/albums/${first.album.slug}`)

@@ -19,6 +19,14 @@
         class="no-underline text-apple-secondary hover:text-apple-accent transition-colors"
       >{{ album.artist }}</router-link>
       <span v-else>{{ album.artist }}</span>
+      <span v-if="album.seller?.id" class="text-[11px] text-black/30 ml-1">
+        &middot;
+        <router-link
+          :to="`/seller/${album.seller.id}`"
+          @click.stop
+          class="no-underline text-black/30 hover:text-[rgb(196,147,51)] transition-colors"
+        >{{ album.seller.storeName }}</router-link>
+      </span>
     </p>
       <h3 class="text-base font-semibold tracking-[-0.01em] mb-1 truncate">{{ album.title }}</h3>
       <p class="text-[13px] text-apple-tertiary mb-3">{{ album.year }} &middot; {{ album.country }}</p>

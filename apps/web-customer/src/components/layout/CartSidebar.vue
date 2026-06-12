@@ -59,11 +59,16 @@
 </template>
 
 <script setup>
+import { watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '../../stores/cart';
 
 const cart = useCartStore();
 const router = useRouter();
+
+watch(() => cart.isOpen, (val) => {
+  document.body.style.overflow = val ? 'hidden' : '';
+});
 
 function coverSrc(url) {
   if (!url) return '';

@@ -44,6 +44,7 @@ export class AlbumsService {
         where,
         include: {
           artistRel: { select: { id: true, name: true, slug: true } },
+          seller: { select: { id: true, storeName: true } },
           categories: { include: { category: true } },
           _count: { select: { tracks: true } },
         },
@@ -75,6 +76,7 @@ export class AlbumsService {
       where: { slug },
       include: {
         artistRel: { select: { id: true, name: true, slug: true, photo: true } },
+        seller: { select: { id: true, storeName: true } },
         tracks: { orderBy: { position: 'asc' } },
         categories: { include: { category: true } },
       },

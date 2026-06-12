@@ -44,6 +44,7 @@ const auth = useAdminAuthStore();
 const router = useRouter();
 
 const navItems = [
+  { to: '/dashboard', label: '数据看板' },
   { to: '/sellers', label: '卖家审核' },
   { to: '/artists', label: '乐队管理' },
 ];

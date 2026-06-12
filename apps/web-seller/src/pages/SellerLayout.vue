@@ -52,6 +52,8 @@ const navItems = [
   { to: '/albums', label: '专辑管理' },
   { to: '/create', label: '上架专辑' },
   { to: '/orders', label: '订单管理' },
+  { to: '/stats', label: '数据统计' },
+  { to: '/chat', label: '消息' },
 ];
 
 function handleLogout() {

@@ -40,6 +40,11 @@ const routes = [
     component: () => import('../pages/ArtistPage.vue'),
   },
   {
+    path: '/seller/:id',
+    name: 'seller',
+    component: () => import('../pages/SellerPage.vue'),
+  },
+  {
     path: '/cart',
     name: 'cart',
     component: () => import('../pages/CartPage.vue'),
@@ -88,6 +93,12 @@ const routes = [
     path: '/profile',
     name: 'profile',
     component: () => import('../pages/UserProfilePage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/messages',
+    name: 'messages',
+    component: () => import('../pages/MessagesPage.vue'),
     meta: { requiresAuth: true },
   },
   {

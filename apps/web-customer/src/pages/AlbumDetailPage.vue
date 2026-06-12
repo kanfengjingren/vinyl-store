@@ -46,6 +46,13 @@
           <p class="text-[15px] text-white/50 mb-2">
             {{ album.year }} &middot; {{ album.country }} &middot; {{ album.label }}
           </p>
+          <p v-if="album.seller?.id" class="text-[14px] text-white/40 mb-2">
+            卖家:
+            <router-link
+              :to="`/seller/${album.seller.id}`"
+              class="no-underline text-white/40 hover:text-[rgb(196,147,51)] transition-colors"
+            >{{ album.seller.storeName }}</router-link>
+          </p>
           <div v-if="album.categories?.length" class="flex gap-1.5 flex-wrap mb-5">
             <span v-for="cat in album.categories" :key="cat.id"
               class="text-xs font-medium bg-white/10 text-white/80 px-3 py-1 rounded-full">{{ cat.name }}</span>

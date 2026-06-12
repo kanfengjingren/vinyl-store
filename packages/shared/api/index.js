@@ -8,3 +8,5 @@ export * from './upload';
 export * from './admin';
 export * from './wallet';
 export * from './artists';
+export * from './sellers';
+export * from './chat';

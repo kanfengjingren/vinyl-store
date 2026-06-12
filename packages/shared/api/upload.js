@@ -38,3 +38,14 @@ export function uploadAudio(file) {
     return url.startsWith('/') ? url.slice(1) : url;
   });
 }
+
+/**
+ * 上传聊天图片
+ * @param {File} file - 图片文件
+ * @returns {Promise<string>} 返回图片路径（绝对路径，以 / 开头）
+ */
+export function uploadChatImage(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post('/upload/chat-image', fd).then((r) => r.data.url);
+}

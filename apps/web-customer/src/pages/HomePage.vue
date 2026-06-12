@@ -26,8 +26,8 @@
           {{ featured.artist }} — {{ featured.title }}
         </p>
         <SearchBar class="mb-5" />
-        <span class="inline-flex items-center gap-2 bg-black text-white text-[15px] font-medium px-7 py-3 hover:bg-black/80 hover:scale-105 transition-all cursor-pointer"
-          @click="scrollToRows">探索收藏</span>
+        <router-link to="/catalog?category=symphonic"
+          class="inline-flex items-center gap-2 bg-black text-white text-[15px] font-medium px-7 py-3 hover:bg-black/80 hover:scale-105 transition-all no-underline">探索收藏</router-link>
       </template>
     </section>
 
@@ -57,26 +57,6 @@
         </router-link>
       </div>
     </section>
-
-    <!-- 颜色筛选 -->
-    <div ref="rowsRef" class="max-w-[1200px] mx-auto px-6 pb-8">
-      <div class="flex items-center gap-2 flex-wrap">
-        <span class="text-xs text-gray-400 mr-1">颜色</span>
-        <button
-          v-for="c in colors"
-          :key="c.label"
-          @click="albumStore.setFilter('color', albumStore.filters.color === c.label ? '' : c.label)"
-          :class="[
-            'w-6 h-10 border-2 transition-all cursor-pointer',
-            albumStore.filters.color === c.label
-              ? 'border-black scale-110 shadow-[0_0_0_2px_rgba(0,0,0,.1)]'
-              : 'border-gray-200 hover:scale-105 hover:shadow-md'
-          ]"
-          :style="{ background: c.hex }"
-          :title="c.name"
-        ></button>
-      </div>
-    </div>
 
     <!-- 分类横排滚动行 -->
     <section v-for="row in categoryRows" :key="row.slug" class="pb-14">
@@ -109,21 +89,17 @@
 <script setup>
 defineOptions({ name: 'HomePage' });
 import { onMounted, ref, computed } from 'vue';
-import { fetchAlbums, fetchColors } from '@vinyl-store/shared';
-import { useAlbumStore } from '../stores/albums';
+import { fetchAlbums } from '@vinyl-store/shared';
 import { useCategoryStore } from '../stores/categories';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import AlbumCard from '../components/album/AlbumCard.vue';
 import SearchBar from '../components/search/SearchBar.vue';
 
-const albumStore = useAlbumStore();
 const categoryStore = useCategoryStore();
 const cart = useCartStore();
 const auth = useAuthStore();
-const rowsRef = ref(null);
 const featured = ref(null);
-const colors = ref([]);
 const categoryRows = ref([]);
 
 // 鼠标拖拽横向滚动
@@ -167,9 +143,6 @@ const featuredInfo = computed(() => {
 });
 
 onMounted(async () => {
-  categoryStore.load();
-  fetchColors().then(c => colors.value = c).catch(() => {});
-
   // 今日推荐
   try {
     const data = await fetchAlbums({ limit: 50 });
@@ -195,10 +168,6 @@ onMounted(async () => {
     categoryRows.value = rows;
   } catch {}
 });
-
-function scrollToRows() {
-  rowsRef.value?.scrollIntoView({ behavior: 'smooth' });
-}
 
 function coverSrc(url) {
   if (!url) return '';

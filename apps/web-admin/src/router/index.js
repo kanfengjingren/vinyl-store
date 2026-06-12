@@ -14,7 +14,12 @@ const routes = [
     children: [
       {
         path: '',
-        redirect: '/sellers',
+        redirect: '/dashboard',
+      },
+      {
+        path: 'dashboard',
+        name: 'dashboard',
+        component: () => import('../pages/DashboardPage.vue'),
       },
       {
         path: 'sellers',

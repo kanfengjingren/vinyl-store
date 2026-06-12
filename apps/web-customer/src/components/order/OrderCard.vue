@@ -1,20 +1,14 @@
 <template>
-  <div class="border border-[rgb(196,147,51)]/30 rounded-lg overflow-hidden bg-white">
-    <!-- 头部：时间 + 状态 -->
-    <div class="flex items-center justify-between px-5 py-3 border-b border-black/10">
+  <div class="border border-black/5 bg-white">
+    <!-- 头部 -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-black/5">
       <div>
-        <time class="text-sm text-black/60">{{ formatDate(order.createdAt) }}</time>
+        <time class="text-sm text-gray-500">{{ formatDate(order.createdAt) }}</time>
         <span v-if="countdown" class="text-xs text-red-400 ml-3">{{ countdown }}</span>
       </div>
-      <span :class="['text-xs font-medium px-3 py-1 rounded-full border', statusStyle]">
+      <span :class="['text-xs px-3 py-1', statusStyle]">
         {{ statusLabel }}
       </span>
-    </div>
-
-    <!-- 收货地址 -->
-    <div v-if="order.shippingAddress" class="px-5 py-2.5 border-b border-black/5 bg-black/[0.01]">
-      <span class="text-xs text-black/40 mr-2">收货地址</span>
-      <span class="text-xs text-black/60">{{ order.shippingAddress }}</span>
     </div>
 
     <!-- 专辑列表 -->
@@ -23,94 +17,41 @@
         v-for="item in order.items"
         :key="item.id"
         :class="[
-          'flex items-center gap-3 px-5 py-3',
-          (item.status === 'REFUNDED' || item.album?.status === 'DELISTED') ? 'bg-black/[0.02] opacity-60' : ''
+          'flex items-center gap-4 px-6 py-4',
+          (item.status === 'REFUNDED' || item.album?.status === 'DELISTED') ? 'opacity-40' : ''
         ]"
       >
-        <div class="relative w-10 h-10 rounded shrink-0 overflow-hidden" :style="{ background: item.album?.gradient }">
-          <img
-            v-if="item.album?.coverUrl"
-            :src="coverSrc(item.album.coverUrl)"
-            class="w-full h-full object-cover"
-          />
-          <!-- 已下架遮罩 -->
-          <div
-            v-if="item.album?.status === 'DELISTED'"
-            class="absolute inset-0 rounded bg-black/30 flex items-center justify-center"
-          >
-            <span class="text-[8px] text-white font-medium">下架</span>
-          </div>
+        <div class="w-12 h-12 shrink-0 overflow-hidden" :style="{ background: item.album?.gradient || '#eee' }">
+          <img v-if="item.album?.coverUrl" :src="coverSrc(item.album.coverUrl)" class="w-full h-full object-cover" />
         </div>
-        <span
-          :class="[
-            'flex-1 text-sm truncate',
-            item.status === 'REFUNDED' || item.album?.status === 'DELISTED' ? 'text-black/30 line-through' : 'text-black/80'
-          ]"
-        >
-          {{ item.status === 'REFUNDED' ? '已退款' : (item.album?.status === 'DELISTED' ? '专辑已下架' : (item.album?.title ?? '专辑已下架')) }}
-        </span>
-        <span
-          v-if="item.status === 'REFUNDED'"
-          class="text-[11px] text-green-600 font-medium shrink-0"
-        >已退款 ¥{{ item.unitPrice * item.quantity }}</span>
-        <span class="text-sm text-black/60">&times;{{ item.quantity }}</span>
-        <span class="text-sm font-medium text-black w-16 text-right">&yen;{{ item.unitPrice }}</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-black truncate">{{ item.album?.title ?? '专辑已下架' }}</p>
+          <p class="text-xs text-gray-400">{{ item.album?.artist }}</p>
+        </div>
+        <span class="text-sm text-gray-400">&times;{{ item.quantity }}</span>
+        <span class="text-sm text-black w-20 text-right">&yen;{{ item.unitPrice * item.quantity }}</span>
       </li>
     </ul>
 
-    <!-- 底部：操作按钮 + 汇总 -->
-    <div class="flex items-center justify-between px-5 py-3 border-t border-[rgb(196,147,51)]/30 bg-[rgb(196,147,51)]/5 gap-4">
-      <!-- 操作按钮 -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <!-- 待付款 -->
+    <!-- 底部 -->
+    <div class="flex items-center justify-between px-6 py-4 border-t border-black/5 bg-gray-50/50">
+      <div class="flex items-center gap-2">
         <template v-if="order.status === 'PENDING'">
-          <button
-            class="text-xs px-3 py-1.5 rounded border border-black/15 text-black/50 hover:text-red-600 hover:border-red-300 transition-colors"
-            @click="emit('cancel')"
-          >
-            取消订单
-          </button>
-          <button
-            class="text-xs px-3 py-1.5 rounded border border-black/15 text-black/50 hover:text-black hover:border-black/40 transition-colors"
-            @click="emit('detail')"
-          >
-            订单详情
-          </button>
-          <button
-            class="text-xs px-3 py-1.5 rounded border border-[rgb(196,147,51)] bg-[rgb(196,147,51)] text-white hover:bg-[rgb(176,127,31)] transition-colors"
-            @click="emit('pay')"
-          >
-            继续付款
-          </button>
+          <button class="text-xs px-4 py-2 border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200 transition-colors" @click="emit('cancel')">取消订单</button>
+          <button class="text-xs px-4 py-2 border border-gray-200 text-gray-500 hover:text-black hover:border-gray-400 transition-colors" @click="emit('detail')">订单详情</button>
+          <button class="text-xs px-4 py-2 bg-black text-white hover:bg-black/80 transition-colors" @click="emit('pay')">继续付款</button>
         </template>
 
-        <!-- 待收货 -->
         <template v-if="order.status === 'PAID' || order.status === 'SHIPPED'">
-          <button
-            class="text-xs px-3 py-1.5 rounded border border-black/15 text-black/50 hover:text-black hover:border-black/40 transition-colors"
-            @click="emit('detail')"
-          >
-            订单详情
-          </button>
+          <button class="text-xs px-4 py-2 border border-gray-200 text-gray-500 hover:text-black hover:border-gray-400 transition-colors" @click="emit('detail')">订单详情</button>
         </template>
 
-        <!-- 已完成 -->
-        <button
-          v-if="order.status === 'DELIVERED'"
-          class="text-xs px-3 py-1.5 rounded border border-[rgb(196,147,51)]/50 text-[rgb(196,147,51)] hover:bg-[rgb(196,147,51)]/10 transition-colors"
-          @click="emit('buyAgain')"
-        >
-          再次购买
-        </button>
+        <button v-if="order.status === 'DELIVERED'" class="text-xs px-4 py-2 border border-[rgb(196,147,51)]/30 text-[rgb(196,147,51)] hover:bg-[rgb(196,147,51)]/5 transition-colors" @click="emit('buyAgain')">再次购买</button>
       </div>
 
-      <!-- 汇总 -->
-      <div class="flex items-center gap-3 shrink-0">
-        <span class="text-sm text-black/60">共 {{ order.items.length }} 件</span>
-        <span class="text-base font-semibold tracking-[-0.02em]">
-          <span class="text-sm font-normal text-black/60 mr-1">总价</span>
-          &yen;{{ order.totalAmount }}
-        </span>
+      <div class="flex items-center gap-3 text-sm">
+        <span class="text-gray-400">共 {{ order.items.length }} 件</span>
+        <span class="font-semibold text-black">&yen;{{ order.totalAmount }}</span>
       </div>
     </div>
   </div>
@@ -123,11 +64,11 @@ const props = defineProps({ order: Object })
 const emit = defineEmits(['cancel', 'pay', 'detail', 'buyAgain'])
 
 const statusMap = {
-  PENDING:  { label: '待付款', style: 'text-[rgb(196,147,51)] border-[rgb(196,147,51)]/30 bg-[rgb(196,147,51)]/5' },
-  PAID:     { label: '待收货', style: 'text-blue-600 border-blue-200 bg-blue-50' },
-  SHIPPED:  { label: '待收货', style: 'text-blue-600 border-blue-200 bg-blue-50' },
-  DELIVERED:{ label: '已完成', style: 'text-green-700 border-green-200 bg-green-50' },
-  CANCELLED:{ label: '已取消', style: 'text-black/40 border-black/10 bg-black/5' },
+  PENDING:  { label: '待付款', style: 'bg-yellow-50 text-yellow-700' },
+  PAID:     { label: '待收货', style: 'bg-blue-50 text-blue-600' },
+  SHIPPED:  { label: '待收货', style: 'bg-blue-50 text-blue-600' },
+  DELIVERED:{ label: '已完成', style: 'bg-green-50 text-green-600' },
+  CANCELLED:{ label: '已取消', style: 'bg-gray-100 text-gray-400' },
 }
 
 const statusLabel = computed(() => statusMap[props.order.status]?.label ?? props.order.status)

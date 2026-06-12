@@ -11,6 +11,7 @@ import { SellerStatus } from '@prisma/client';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  // ── 卖家审核 ──
   @Get('sellers')
   listSellers(@Query('status') status?: SellerStatus) {
     return this.adminService.listSellers(status);
@@ -24,5 +25,26 @@ export class AdminController {
   @Patch('sellers/:id/reject')
   rejectSeller(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.rejectSeller(id);
+  }
+
+  // ── 数据看板 ──
+  @Get('stats')
+  getDashboardStats() {
+    return this.adminService.getDashboardStats();
+  }
+
+  @Get('stats/sales-trend')
+  getSalesTrend() {
+    return this.adminService.getSalesTrend();
+  }
+
+  @Get('stats/category-sales')
+  getCategorySales() {
+    return this.adminService.getCategorySales();
+  }
+
+  @Get('stats/top-albums')
+  getTopAlbums() {
+    return this.adminService.getTopAlbums();
   }
 }

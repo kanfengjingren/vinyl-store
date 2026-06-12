@@ -27,6 +27,9 @@ model User {
   orders  Order[]
   seller  Seller?
 
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+
   @@map("users")
 }
 
@@ -237,4 +240,24 @@ enum OrderItemStatus {
   ACTIVE
   SHIPPED
   REFUNDED
+}
+
+// ════════════════════════════════════════
+// MESSAGE (用户↔商家聊天)
+// ════════════════════════════════════════
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  content    String   @db.Text
+  imageUrl   String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@index([receiverId])
+  @@map("messages")
 }

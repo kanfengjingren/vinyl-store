@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Socket.IO adapter — 必须配置，否则 WebSocket 网关不工作
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Global prefix: all routes start with /api
   app.setGlobalPrefix('api');
@@ -22,5 +26,7 @@ async function bootstrap() {
 
   await app.listen(3000);
   console.log('Server running on http://localhost:3000/api');
+  console.log('[Socket.IO] IoAdapter 已启用，WebSocket 网关可用');
+  console.log('[Socket.IO] 聊天命名空间: /chat');
 }
 bootstrap();

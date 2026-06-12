@@ -6,7 +6,7 @@
           幻觉贸易
         </router-link>
         <ul v-if="!auth.isAdmin" class="hidden md:flex gap-7 list-none">
-          <li><router-link to="/"
+          <li><router-link to="/catalog?category=symphonic"
               class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">全部唱片</router-link>
           </li>
           <li><a href="#"
@@ -21,6 +21,8 @@
         <template v-if="auth.isLoggedIn">
           <router-link v-if="!auth.isAdmin" to="/orders"
             class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">订单</router-link>
+          <router-link v-if="!auth.isAdmin" to="/messages"
+            class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">消息</router-link>
           <router-link v-if="!auth.isAdmin" to="/profile" class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">{{ auth.user?.name || auth.user?.email }}</router-link>
           <button @click="handleLogout"
             class="text-[13px] text-apple-secondary hover:text-apple-text transition-colors">退出</button>

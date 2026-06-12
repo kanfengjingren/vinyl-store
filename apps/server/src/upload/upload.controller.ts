@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { randomUUID } from 'crypto';
@@ -89,5 +89,31 @@ export class UploadController {
       return { message: '请上传图片文件 (jpg/png/webp/gif, ≤5MB)' };
     }
     return { url: `/uploads/artists/${file.filename}` };
+  }
+
+  // 聊天图片上传（任何登录用户都可以用）
+  @UseGuards(JwtAuthGuard)
+  @Post('chat-image')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: join(uploadsPath, 'chat'),
+        filename: (_req, file, cb) => {
+          const ext = file.originalname.split('.').pop();
+          cb(null, `${randomUUID()}.${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        cb(null, allowed.includes(file.mimetype));
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  uploadChatImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      return { message: '请上传图片文件 (jpg/png/webp/gif, ≤5MB)' };
+    }
+    return { url: `/uploads/chat/${file.filename}` };
   }
 }
