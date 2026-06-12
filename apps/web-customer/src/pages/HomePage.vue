@@ -13,7 +13,7 @@
             class="inline-flex items-center gap-2 bg-black text-white text-[15px] font-semibold px-8 py-3.5 hover:bg-black/80 hover:scale-105 transition-all no-underline shadow-lg">
             用户登录
           </router-link>
-          <a href="/seller/login"
+          <a href="http://139.224.29.234:3002/login"
             class="inline-flex items-center gap-2 bg-white text-black text-[15px] font-medium px-8 py-3.5 border border-gray-300 hover:border-black hover:scale-105 transition-all no-underline">
             商家登录
           </a>
