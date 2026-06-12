@@ -1,5 +1,5 @@
 <template>
-  <div class="card bg-white dark:bg-neutral-800 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,.08)] dark:shadow-none hover:-translate-y-1.5 hover:shadow-[0_8px_40px_rgba(0,0,0,.12)] dark:hover:shadow-[0_8px_40px_rgba(0,0,0,.5)] transition-all cursor-pointer"
+  <div class="card bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,.08)] hover:-translate-y-1.5 hover:shadow-[0_8px_40px_rgba(0,0,0,.12)] transition-all cursor-pointer"
     @click="$router.push(`/albums/${album.slug}`)">
     <div class="card-art aspect-square relative overflow-hidden" :style="{ background: album.gradient }">
       <img v-if="album.coverUrl" :src="coverSrc(album.coverUrl)" class="card-img-inner absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out" />
@@ -11,7 +11,7 @@
       </span>
     </div>
     <div class="p-4 pb-5 px-[18px]">
-      <p class="text-xs font-medium uppercase tracking-[.04em] text-apple-secondary dark:text-neutral-400 mb-1">
+      <p class="text-xs font-medium uppercase tracking-[.04em] text-apple-secondary mb-1">
       <router-link
         v-if="album.artistInfo?.slug"
         :to="`/artists/${album.artistInfo.slug}`"
@@ -20,8 +20,8 @@
       >{{ album.artist }}</router-link>
       <span v-else>{{ album.artist }}</span>
     </p>
-      <h3 class="text-base font-semibold tracking-[-0.01em] mb-1 truncate dark:text-white">{{ album.title }}</h3>
-      <p class="text-[13px] text-apple-tertiary dark:text-neutral-400 mb-3">{{ album.year }} &middot; {{ album.country }}</p>
+      <h3 class="text-base font-semibold tracking-[-0.01em] mb-1 truncate">{{ album.title }}</h3>
+      <p class="text-[13px] text-apple-tertiary mb-3">{{ album.year }} &middot; {{ album.country }}</p>
       <div class="flex items-center justify-between">
         <span class="text-lg font-semibold tracking-[-0.02em]">&yen;{{ album.price }}</span>
         <button @click.stop="handleBuy" class="text-xs font-semibold text-apple-accent no-underline px-3.5 py-1.5 rounded-full bg-apple-accent/10 hover:bg-apple-accent/20 transition-colors border-none cursor-pointer">

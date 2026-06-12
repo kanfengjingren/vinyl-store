@@ -14,7 +14,7 @@
         v-model="query"
         type="text"
         placeholder="搜索专辑、艺人..."
-        class="w-full h-11 pl-11 pr-10 rounded-full border border-black/15 dark:border-neutral-700 bg-white/70 dark:bg-neutral-800/70 backdrop-blur-md text-[15px] text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-neutral-500 outline-none transition-all focus:border-[rgb(196,147,51)]/50 focus:bg-white dark:focus:bg-neutral-800 focus:shadow-[0_4px_20px_rgba(0,0,0,.06)]"
+        class="w-full h-11 pl-11 pr-10 rounded-full border border-black/15 bg-white/70 backdrop-blur-md text-[15px] text-black placeholder:text-black/30 outline-none transition-all focus:border-[rgb(196,147,51)]/50 focus:bg-white focus:shadow-[0_4px_20px_rgba(0,0,0,.06)]"
         @keydown.enter="onEnter"
         @keydown.arrow-down.prevent="onArrowDown"
         @keydown.arrow-up.prevent="onArrowUp"
@@ -33,7 +33,7 @@
     <Transition name="dropdown">
       <div
         v-if="visible"
-        class="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-neutral-800 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,.1)] dark:shadow-[0_12px_40px_rgba(0,0,0,.4)] border border-black/10 dark:border-neutral-700 overflow-hidden z-50"
+        class="absolute top-full mt-2 left-0 right-0 bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,.1)] border border-black/10 overflow-hidden z-50"
       >
         <div v-if="loading" class="px-4 py-6 text-center text-sm text-black/30">搜索中...</div>
         <div v-else-if="!suggestions.length" class="px-4 py-6 text-center text-sm text-black/30">无匹配结果</div>
@@ -59,8 +59,8 @@
               />
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-black/80 dark:text-white/80 truncate">{{ item.title }}</p>
-              <p class="text-xs text-black/40 dark:text-white/40 truncate">{{ item.artist }}</p>
+              <p class="text-sm font-medium text-black/80 truncate">{{ item.title }}</p>
+              <p class="text-xs text-black/40 truncate">{{ item.artist }}</p>
             </div>
           </li>
         </ul>

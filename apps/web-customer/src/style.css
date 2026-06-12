@@ -7,20 +7,6 @@ html { scroll-behavior: smooth; }
 body {
   @apply bg-apple-bg text-apple-text font-sans antialiased leading-relaxed;
 }
-.dark body {
-  background: #171717;
-  color: #e5e5e5;
-}
-
-.nav-blur {
-  background: rgba(245, 245, 247, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-}
-.dark .nav-blur {
-  background: rgba(23, 23, 23, 0.72);
-  border-color: #404040;
-}
 
 html, body,#app{
   height: 100%;
@@ -28,6 +14,14 @@ html, body,#app{
 #app {
   /* display: flex; */
   /* flex-direction: column; */
+}
+
+.nav-blur {
+  background: rgba(245, 245, 247, 0.72);
+  /* background-color: black; */
+  /* color: rgb(205, 189, 157); */
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
 .hero-text {
