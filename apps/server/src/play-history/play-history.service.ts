@@ -18,7 +18,7 @@ export class PlayHistoryService {
       where: { userId },
       include: {
         track: {
-          select: { id: true, title: true, duration: true, position: true, audioUrl: true },
+          select: { id: true, title: true, duration: true, position: true, audioUrl: true, albumId: true },
         },
         album: {
           select: { id: true, artist: true, title: true, coverUrl: true, gradient: true, slug: true },

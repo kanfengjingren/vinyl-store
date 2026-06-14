@@ -6,7 +6,7 @@
     </div>
   </Teleport>
 
-  <div class="fixed top-[52px] left-0 right-0 bottom-0 flex z-[1]">
+  <div class="fixed top-[52px] left-0 right-0 flex z-[1]" :class="player.track ? 'bottom-16' : 'bottom-0'">
     <!-- 左侧会话列表 -->
     <div class="w-[300px] shrink-0 border-r border-black/5 bg-white/50 flex flex-col">
       <div class="px-5 py-4 text-sm font-semibold text-black border-b border-black/5">消息</div>
@@ -118,6 +118,7 @@ import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { io } from 'socket.io-client';
 import { fetchConversations, fetchMessages, markMessagesRead, uploadChatImage } from '@vinyl-store/shared';
+import { player } from '../stores/player';
 
 const router = useRouter();
 

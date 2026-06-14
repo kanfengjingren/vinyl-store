@@ -173,13 +173,24 @@
         <template v-else>
           <div class="space-y-1">
             <div v-for="(h, idx) in playHistory" :key="h.id"
-              class="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
-              @click="$router.push(`/albums/${h.album.slug}`)">
+              class="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition-colors group">
               <span class="text-xs text-gray-300 w-6 text-right shrink-0">{{ playHistory.length - idx }}</span>
-              <div class="w-10 h-10 shrink-0 overflow-hidden" :style="{ background: h.album.gradient || '#f3f4f6' }">
+              <button
+                v-if="h.track.audioUrl"
+                @click.stop="playFromHistory(h)"
+                class="w-8 h-8 shrink-0 rounded-full bg-gray-100 group-hover:bg-[rgb(196,147,51)] text-gray-400 group-hover:text-white flex items-center justify-center transition-colors"
+                title="播放"
+              >
+                <span class="text-[10px] ml-px">▶</span>
+              </button>
+              <div
+                v-else
+                class="w-8 shrink-0"
+              />
+              <div class="w-10 h-10 shrink-0 overflow-hidden cursor-pointer" :style="{ background: h.album.gradient || '#f3f4f6' }" @click="$router.push(`/albums/${h.album.slug}`)">
                 <img v-if="h.album.coverUrl" :src="coverSrc(h.album.coverUrl)" class="w-full h-full object-cover" />
               </div>
-              <div class="flex-1 min-w-0">
+              <div class="flex-1 min-w-0 cursor-pointer" @click="$router.push(`/albums/${h.album.slug}`)">
                 <p class="text-sm font-medium truncate">{{ h.track.title }}</p>
                 <p class="text-xs text-gray-400 truncate">{{ h.album.artist }} — {{ h.album.title }}</p>
               </div>
@@ -303,6 +314,19 @@ function isPurchased(albumId) {
 function playTrack(track, artist) {
   if (!track.audioUrl) return
   play(track, artist)
+}
+
+function playFromHistory(h) {
+  if (!h.track?.audioUrl) return
+  play(h.track, h.album.artist, {
+    title: h.album.title,
+    coverUrl: h.album.coverUrl,
+    gradient: h.album.gradient || '',
+    description: '',
+    categories: [],
+    artist: h.album.artist,
+    artistInfo: null,
+  })
 }
 
 async function buyFavorite(album) {

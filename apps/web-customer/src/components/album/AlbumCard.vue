@@ -33,7 +33,7 @@
       <div class="flex items-center justify-between">
         <span class="text-lg font-semibold tracking-[-0.02em]">&yen;{{ album.price }}</span>
         <button @click.stop="handleBuy" class="text-xs font-semibold text-apple-accent no-underline px-3.5 py-1.5 rounded-full bg-apple-accent/10 hover:bg-apple-accent/20 transition-colors border-none cursor-pointer">
-          购买
+          加入购物车
         </button>
       </div>
     </div>
