@@ -1,14 +1,15 @@
 <template>
   <div class="flex gap-2.5 py-2.5">
     <!-- 头像（小号） -->
-    <div class="shrink-0 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-[11px] font-medium">
-      {{ reply.user?.name?.charAt(0) || '?' }}
-    </div>
+    <router-link :to="`/user/${reply.userId}`" class="shrink-0 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-[11px] font-medium overflow-hidden hover:ring-2 hover:ring-[rgb(196,147,51)]/50 transition-all cursor-pointer">
+      <img v-if="reply.user?.avatar" :src="coverSrc(reply.user.avatar)" class="w-full h-full object-cover" />
+      <span v-else>{{ reply.user?.name?.charAt(0) || '?' }}</span>
+    </router-link>
 
     <div class="flex-1 min-w-0">
       <!-- 用户名 + 时间 -->
       <div class="flex items-center gap-2 mb-1">
-        <span class="text-[13px] font-medium text-[rgb(196,147,51)]">{{ reply.user?.name || '匿名' }}</span>
+        <router-link :to="`/user/${reply.userId}`" class="text-[13px] font-medium text-[rgb(196,147,51)] hover:text-[rgb(255,180,80)] transition-colors no-underline">{{ reply.user?.name || '匿名' }}</router-link>
         <span class="text-white/25 text-[11px]">{{ formatTime(reply.createdAt) }}</span>
       </div>
 
@@ -64,6 +65,12 @@ const emit = defineEmits(['deleted', 'replied']);
 
 const auth = useAuthStore();
 const showReplyInput = ref(false);
+
+function coverSrc(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : `/${url}`
+}
 
 function formatTime(dateStr) {
   if (!dateStr) return '';

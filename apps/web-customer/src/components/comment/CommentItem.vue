@@ -3,14 +3,15 @@
     <!-- 主评论 -->
     <div class="flex gap-3">
       <!-- 头像 -->
-      <div class="shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-sm font-medium overflow-hidden">
-        {{ comment.user?.name?.charAt(0) || '?' }}
-      </div>
+      <router-link :to="`/user/${comment.userId}`" class="shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-sm font-medium overflow-hidden hover:ring-2 hover:ring-[rgb(196,147,51)]/50 transition-all cursor-pointer">
+        <img v-if="comment.user?.avatar" :src="coverSrc(comment.user.avatar)" class="w-full h-full object-cover" />
+        <span v-else>{{ comment.user?.name?.charAt(0) || '?' }}</span>
+      </router-link>
 
       <div class="flex-1 min-w-0">
         <!-- 用户名 + 时间 -->
         <div class="flex items-center gap-2 mb-1.5">
-          <span class="text-sm font-medium text-white">{{ comment.user?.name || '匿名' }}</span>
+          <router-link :to="`/user/${comment.userId}`" class="text-sm font-medium text-white hover:text-[rgb(196,147,51)] transition-colors no-underline">{{ comment.user?.name || '匿名' }}</router-link>
           <span class="text-white/25 text-xs">{{ formatTime(comment.createdAt) }}</span>
         </div>
 
@@ -106,6 +107,12 @@ const emit = defineEmits(['deleted', 'replied']);
 
 const auth = useAuthStore();
 const showReplyInput = ref(false);
+
+function coverSrc(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : `/${url}`
+}
 const allReplies = ref(null);   // null=未展开, []或[...]=已展开全部
 const replyPage = ref(1);       // 当前显示到第几页（每页8条）
 

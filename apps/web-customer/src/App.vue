@@ -25,9 +25,14 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
+import { useAuthStore } from './stores/auth'
 import NavBar from './components/layout/NavBar.vue';
 import CartSidebar from './components/layout/CartSidebar.vue';
 import AudioPlayer from './components/player/AudioPlayer.vue';
+
+const auth = useAuthStore()
+onMounted(() => { auth.checkAuth() })
 import PlayerOverlay from './components/player/PlayerOverlay.vue';
 import { ToastNotification, AppModal } from '@vinyl-store/shared/ui';
 import { useRoute } from "vue-router";

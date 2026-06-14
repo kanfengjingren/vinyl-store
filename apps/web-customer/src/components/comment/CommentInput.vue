@@ -2,7 +2,8 @@
   <div class="flex gap-3">
     <!-- 头像 -->
     <div class="shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-sm font-medium overflow-hidden">
-      <span v-if="!auth.user?.name">?</span>
+      <img v-if="auth.user?.avatar" :src="coverSrc(auth.user.avatar)" class="w-full h-full object-cover" />
+      <span v-else-if="!auth.user?.name">?</span>
       <span v-else>{{ auth.user.name.charAt(0) }}</span>
     </div>
 
@@ -54,6 +55,12 @@ const emit = defineEmits(['submitted']);
 
 const auth = useAuthStore();
 const text = ref('');
+
+function coverSrc(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : `/${url}`
+}
 const submitting = ref(false);
 
 async function submit() {

@@ -19,15 +19,22 @@
           :key="c.partner.id"
           @click="select(c.partner)"
           :class="[
-            'px-5 py-4 border-b border-black/[0.03] cursor-pointer hover:bg-black/[0.02] transition-colors',
+            'px-5 py-4 border-b border-black/[0.03] cursor-pointer hover:bg-black/[0.02] transition-colors flex items-center gap-3',
             activeId === c.partner.id ? 'bg-[rgb(196,147,51)]/5 border-l-[3px] border-l-[rgb(196,147,51)]' : '',
           ]"
         >
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-sm font-medium text-black">{{ c.partner.storeName || c.partner.name || c.partner.email }}</span>
-            <span v-if="c.unreadCount > 0" class="text-[11px] bg-[rgb(196,147,51)] text-white px-1.5 py-0.5 rounded-full font-medium">{{ c.unreadCount }}</span>
+          <!-- 头像 -->
+          <router-link :to="`/user/${c.partner.id}`" @click.stop class="shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm font-medium overflow-hidden hover:ring-2 hover:ring-[rgb(196,147,51)]/50 transition-all cursor-pointer">
+            <img v-if="c.partner.avatar" :src="coverSrc(c.partner.avatar)" class="w-full h-full object-cover" />
+            <span v-else>{{ (c.partner.name || c.partner.email || '?').slice(0, 1).toUpperCase() }}</span>
+          </router-link>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-medium text-black">{{ c.partner.storeName || c.partner.name || c.partner.email }}</span>
+              <span v-if="c.unreadCount > 0" class="text-[11px] bg-[rgb(196,147,51)] text-white px-1.5 py-0.5 rounded-full font-medium">{{ c.unreadCount }}</span>
+            </div>
+            <p class="text-xs text-black/30 truncate">{{ formatConversationPreview(c.lastMsg) }}</p>
           </div>
-          <p class="text-xs text-black/30 truncate">{{ formatConversationPreview(c.lastMsg) }}</p>
         </div>
       </div>
     </div>
@@ -127,6 +134,12 @@ const connectionError = ref('');
 const uploading = ref(false);
 const previewImage = ref(null);
 const fileInput = ref(null);
+
+function coverSrc(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : `/${url}`
+}
 
 const myUserId = ref(null);
 try {

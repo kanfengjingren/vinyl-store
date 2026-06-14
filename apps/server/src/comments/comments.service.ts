@@ -21,10 +21,10 @@ export class CommentsService {
       this.prisma.comment.findMany({
         where: { albumId, parentId: null },
         include: {
-          user: { select: { id: true, name: true, role: true } },
+          user: { select: { id: true, name: true, role: true, avatar: true } },
           replies: {
             include: {
-              user: { select: { id: true, name: true, role: true } },
+              user: { select: { id: true, name: true, role: true, avatar: true } },
             },
             orderBy: { createdAt: 'asc' },
             take: 3,
@@ -54,7 +54,7 @@ export class CommentsService {
     return this.prisma.comment.findMany({
       where: { parentId: commentId },
       include: {
-        user: { select: { id: true, name: true, role: true } },
+        user: { select: { id: true, name: true, role: true, avatar: true } },
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -86,7 +86,7 @@ export class CommentsService {
           content: dto.content,
         },
         include: {
-          user: { select: { id: true, name: true, role: true } },
+          user: { select: { id: true, name: true, role: true, avatar: true } },
         },
       });
 
@@ -122,7 +122,7 @@ export class CommentsService {
         content: dto.content,
       },
       include: {
-        user: { select: { id: true, name: true, role: true } },
+        user: { select: { id: true, name: true, role: true, avatar: true } },
       },
     });
   }

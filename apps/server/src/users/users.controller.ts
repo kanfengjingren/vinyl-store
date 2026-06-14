@@ -7,6 +7,11 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get(':id/profile')
+  findPublicProfile(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findPublicProfile(id);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me/purchases')
   findPurchases(@Req() req: any) {

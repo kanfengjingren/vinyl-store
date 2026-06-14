@@ -69,3 +69,8 @@ export function fetchPurchases() {
 export function updateAvatar(avatar) {
   return api.patch('/users/me/avatar', { avatar }).then((r) => r.data);
 }
+
+/** 获取用户公开资料 */
+export function fetchPublicProfile(userId) {
+  return api.get(`/users/${userId}/profile`).then((r) => r.data);
+}

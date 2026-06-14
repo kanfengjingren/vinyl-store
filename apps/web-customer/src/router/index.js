@@ -90,6 +90,11 @@ const routes = [
     component: () => import('../pages/SearchPage.vue'),
   },
   {
+    path: '/user/:id',
+    name: 'user-profile',
+    component: () => import('../pages/PublicProfilePage.vue'),
+  },
+  {
     path: '/profile',
     name: 'profile',
     component: () => import('../pages/UserProfilePage.vue'),

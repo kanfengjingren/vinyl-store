@@ -9,7 +9,7 @@ export class ChatService {
     return this.prisma.message.create({
       data: { senderId, receiverId, content: content || '', imageUrl: imageUrl || null },
       include: {
-        sender: { select: { id: true, name: true } },
+        sender: { select: { id: true, name: true, avatar: true } },
       },
     });
   }
@@ -23,7 +23,7 @@ export class ChatService {
         ],
       },
       include: {
-        sender: { select: { id: true, name: true } },
+        sender: { select: { id: true, name: true, avatar: true } },
       },
       orderBy: { createdAt: 'asc' },
       take: 100,
@@ -34,17 +34,17 @@ export class ChatService {
     // 找所有跟我有消息往来的用户
     const sent = await this.prisma.message.findMany({
       where: { senderId: userId },
-      select: { receiverId: true, receiver: { select: { id: true, name: true, email: true } } },
+      select: { receiverId: true, receiver: { select: { id: true, name: true, email: true, avatar: true } } },
       distinct: ['receiverId'],
     });
 
     const received = await this.prisma.message.findMany({
       where: { receiverId: userId },
-      select: { senderId: true, sender: { select: { id: true, name: true, email: true } } },
+      select: { senderId: true, sender: { select: { id: true, name: true, email: true, avatar: true } } },
       distinct: ['senderId'],
     });
 
-    const partnerMap = new Map<number, { id: number; name: string | null; email: string }>();
+    const partnerMap = new Map<number, { id: number; name: string | null; email: string; avatar: string | null }>();
     for (const r of sent) {
       partnerMap.set(r.receiverId, r.receiver);
     }
@@ -66,7 +66,7 @@ export class ChatService {
 
     // 为每个 partner 获取最后一条消息和未读数
     const result: Array<{
-      partner: { id: number; name: string | null; email: string; storeName: string | null };
+      partner: { id: number; name: string | null; email: string; avatar: string | null; storeName: string | null };
       lastMsg: { content: string; createdAt: Date; senderId: number } | null;
       unreadCount: number;
     }> = [];
@@ -92,6 +92,7 @@ export class ChatService {
           id: partner.id,
           name: partner.name,
           email: partner.email,
+          avatar: partner.avatar,
           storeName: sellerMap.get(partner.id) || null,
         },
         lastMsg,

@@ -18,6 +18,15 @@ export class UsersService {
     return { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance };
   }
 
+  async findPublicProfile(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, avatar: true, createdAt: true },
+    });
+    if (!user) throw new NotFoundException('用户不存在');
+    return user;
+  }
+
   async updateAvatar(userId: number, avatar: string) {
     await this.findById(userId);
     const user = await this.prisma.user.update({ where: { id: userId }, data: { avatar } });
