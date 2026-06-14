@@ -101,7 +101,7 @@ export class CommentsService {
               albumId: parent.album.id,
               albumTitle: parent.album.title,
               albumSlug: parent.album.slug,
-              commentId: parent.id,
+              commentId: actualParentId,
               replyContent: dto.content,
             }),
           },

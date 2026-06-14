@@ -109,14 +109,14 @@
 
       <!-- 评论区 -->
       <div class="mt-12 pt-8 border-t border-white/10" v-if="album.id">
-        <CommentSection :album-id="album.id" />
+        <CommentSection :album-id="album.id" :highlight-comment-id="highlightCommentId" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAlbumStore } from '../stores/albums';
 import { useCartStore } from '../stores/cart';
@@ -135,6 +135,10 @@ const { play } = usePlayer();
 const album = ref(null);
 const loading = ref(false);
 const favorited = ref(false);
+const highlightCommentId = computed(() => {
+  const id = parseInt(route.query.commentId);
+  return isNaN(id) ? null : id;
+});
 
 watch(() => route.params.slug, load, { immediate: true });
 
@@ -169,10 +173,11 @@ function coverSrc(url) {
 
 function onPlay(track) {
   if (player.track?.id === track.id) {
-    // 同一首 → 不操作，让用户通过底部播放器控制
+    // 同一首 → 打开全屏播放器
+    player.showFullPlayer = true
     return
   }
-  play(track, album.value?.artist)
+  play(track, album.value?.artist, album.value)
 }
 
 async function handleBuy() {

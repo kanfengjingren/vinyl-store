@@ -19,6 +19,7 @@
 
   <CartSidebar />
   <AudioPlayer />
+  <PlayerOverlay />
   <ToastNotification />
   <AppModal />
 </template>
@@ -27,6 +28,7 @@
 import NavBar from './components/layout/NavBar.vue';
 import CartSidebar from './components/layout/CartSidebar.vue';
 import AudioPlayer from './components/player/AudioPlayer.vue';
+import PlayerOverlay from './components/player/PlayerOverlay.vue';
 import { ToastNotification, AppModal } from '@vinyl-store/shared/ui';
 import { useRoute } from "vue-router";
 const route = useRoute();

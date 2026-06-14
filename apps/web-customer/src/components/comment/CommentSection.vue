@@ -69,13 +69,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
-import { fetchComments } from '@vinyl-store/shared';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { fetchComments, fetchReplies } from '@vinyl-store/shared';
 import CommentInput from './CommentInput.vue';
 import CommentItem from './CommentItem.vue';
 
 const props = defineProps({
   albumId: { type: Number, required: true },
+  highlightCommentId: { type: Number, default: null },
 });
 
 const comments = ref([]);
@@ -121,5 +122,52 @@ function onSubmitted() {
   loadComments(1); // 新评论后回到第一页
 }
 
-onMounted(() => loadComments());
+async function scrollToHighlight() {
+  if (!props.highlightCommentId) return;
+  // 先看当前页有没有
+  if (comments.value.find(c => Number(c.id) === Number(props.highlightCommentId))) {
+    jumpToComment();
+    return;
+  }
+  // 逐页扫描，最多 20 页
+  for (let p = 1; p <= Math.min(pagination.value.totalPages || 20, 20); p++) {
+    try {
+      const data = await fetchComments(props.albumId, { page: p, limit: 10 });
+      if (data.data.some(c => Number(c.id) === Number(props.highlightCommentId))) {
+        comments.value = data.data;
+        pagination.value = data.pagination;
+        await nextTick();
+        jumpToComment();
+        return;
+      }
+    } catch { break; }
+  }
+}
+
+async function jumpToComment() {
+  // 预加载该评论的全部回复
+  try {
+    const replies = await fetchReplies(props.highlightCommentId);
+    const target = comments.value.find(c => Number(c.id) === Number(props.highlightCommentId));
+    if (target && replies) {
+      target.replies = replies;
+      target._count = { replies: replies.length };
+    }
+  } catch {}
+
+  setTimeout(() => {
+    const el = document.getElementById('comment-' + props.highlightCommentId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.transition = 'background 0.3s';
+      el.style.background = 'rgba(196,147,51,0.15)';
+      setTimeout(() => { el.style.background = ''; }, 2000);
+    }
+  }, 400);
+}
+
+onMounted(async () => {
+  await loadComments();
+  if (props.highlightCommentId) scrollToHighlight();
+});
 </script>

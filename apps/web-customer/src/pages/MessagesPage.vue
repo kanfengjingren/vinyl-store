@@ -296,7 +296,8 @@ function goToAlbum(msg) {
   try {
     const data = JSON.parse(msg.content || '{}');
     if (data.albumSlug) {
-      router.push(`/albums/${data.albumSlug}`);
+      const q = data.commentId ? `?commentId=${data.commentId}` : '';
+      router.push(`/albums/${data.albumSlug}${q}`);
     }
   } catch {}
 }

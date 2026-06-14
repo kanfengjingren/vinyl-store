@@ -1,5 +1,5 @@
 <template>
-  <div class="py-4 border-b border-white/[0.06]">
+  <div :id="'comment-' + comment.id" class="py-4 border-b border-white/[0.06]">
     <!-- 主评论 -->
     <div class="flex gap-3">
       <!-- 头像 -->
