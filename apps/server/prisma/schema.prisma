@@ -17,6 +17,7 @@ model User {
   name           String?
   role           Role      @default(CUSTOMER)
   defaultAddress String?   @db.Text
+  avatar           String?
   balance           Int       @default(0)
   resetCode         String?
   resetCodeExpires  DateTime?
@@ -29,6 +30,9 @@ model User {
 
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
+  comments         Comment[]
+  favorites        Favorite[]
+  playHistory      PlayHistory[]
 
   @@map("users")
 }
@@ -115,6 +119,9 @@ model Album {
   categories   AlbumCategory[]
   cartItems    CartItem[]
   orderItems   OrderItem[]
+  comments     Comment[]
+  favorites    Favorite[]
+  playHistory  PlayHistory[]
 
   @@map("albums")
 }
@@ -137,6 +144,7 @@ model Track {
   audioUrl  String?
 
   album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  playHistory PlayHistory[]
 
   @@map("tracks")
 }
@@ -260,4 +268,62 @@ model Message {
   @@index([senderId, receiverId])
   @@index([receiverId])
   @@map("messages")
+}
+
+// ════════════════════════════════════════
+// COMMENT (专辑评论)
+// ════════════════════════════════════════
+model Comment {
+  id              Int       @id @default(autoincrement())
+  albumId         Int
+  userId          Int
+  parentId        Int?
+  replyToUserId   Int?
+  replyToUserName String?
+  content         String    @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  album   Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([albumId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+// ════════════════════════════════════════
+// FAVORITE (收藏)
+// ════════════════════════════════════════
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  albumId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@map("favorites")
+}
+
+// ════════════════════════════════════════
+// PLAY HISTORY (播放历史)
+// ════════════════════════════════════════
+model PlayHistory {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  trackId  Int
+  albumId  Int
+  playedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt])
+  @@map("play_history")
 }

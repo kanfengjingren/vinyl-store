@@ -21,4 +21,14 @@ export class ChatController {
   markRead(@Req() req: any, @Param('userId', ParseIntPipe) userId: number) {
     return this.chatService.markAsRead(userId, req.user.userId);
   }
+
+  @Get('unread-count')
+  getUnreadCount(@Req() req: any) {
+    return this.chatService.getUnreadCount(req.user.userId);
+  }
+
+  @Patch('read-all')
+  markAllRead(@Req() req: any) {
+    return this.chatService.markAllAsRead(req.user.userId);
+  }
 }

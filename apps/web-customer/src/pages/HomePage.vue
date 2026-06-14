@@ -58,6 +58,42 @@
       </div>
     </section>
 
+    <!-- 本月热销 -->
+    <section v-if="hotAlbums.length > 0" class="pb-14">
+      <div class="max-w-[1200px] mx-auto px-6 pb-4 flex items-end justify-between">
+        <h3 class="text-xl font-semibold tracking-[-0.01em] text-black">本月热销</h3>
+        <router-link to="/catalog?sort=sales&order=desc"
+          class="text-[13px] font-medium text-gray-400 hover:text-black transition-colors no-underline">查看全部 &rarr;</router-link>
+      </div>
+      <div class="max-w-[1200px] mx-auto px-6">
+        <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide cursor-grab active:cursor-grabbing"
+          @mousedown="onDragStart"
+          @mousemove="onDragMove"
+          @mouseup="onDragEnd"
+          @mouseleave="onDragEnd"
+          @click.capture="onRowClick"
+        >
+          <div
+            v-for="(album, idx) in hotAlbums"
+            :key="album.id"
+            class="shrink-0 w-[220px] select-none relative pt-8"
+          >
+            <!-- 排名角标 -->
+            <span
+              class="absolute top-0 left-2 z-10 flex items-center justify-center font-bold text-white select-none"
+              :class="idx < 3 ? 'w-8 h-8 text-[14px]' : 'w-7 h-7 text-[11px]'"
+              :style="rankStyle(idx)"
+            >{{ idx + 1 }}</span>
+            <AlbumCard :album="album" />
+            <!-- 销量 -->
+            <p class="text-center text-[12px] text-gray-400 mt-2 tracking-wide">
+              近30天售出 <span class="text-[rgb(196,147,51)] font-semibold">{{ album.hotSales ?? 0 }}</span> 件
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 分类横排滚动行 -->
     <section v-for="row in categoryRows" :key="row.slug" class="pb-14">
       <div class="max-w-[1200px] mx-auto px-6 pb-4 flex items-end justify-between">
@@ -89,7 +125,7 @@
 <script setup>
 defineOptions({ name: 'HomePage' });
 import { onMounted, ref, computed } from 'vue';
-import { fetchAlbums } from '@vinyl-store/shared';
+import { fetchAlbums, fetchHotAlbums } from '@vinyl-store/shared';
 import { useCategoryStore } from '../stores/categories';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
@@ -100,6 +136,7 @@ const categoryStore = useCategoryStore();
 const cart = useCartStore();
 const auth = useAuthStore();
 const featured = ref(null);
+const hotAlbums = ref([]);
 const categoryRows = ref([]);
 
 // 鼠标拖拽横向滚动
@@ -152,6 +189,12 @@ onMounted(async () => {
     }
   } catch {}
 
+  // 本月热销
+  try {
+    const hot = await fetchHotAlbums(12);
+    hotAlbums.value = hot.data || [];
+  } catch {}
+
   // 每个分类拉取专辑
   try {
     await categoryStore.load();
@@ -172,6 +215,42 @@ onMounted(async () => {
 function coverSrc(url) {
   if (!url) return '';
   return url.startsWith('http') ? url : `/${url}`;
+}
+
+const RANK_STYLES = [
+  // 1st — 鎏金
+  {
+    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 40%, #d97706 100%)',
+    boxShadow: '0 2px 12px rgba(245,158,11,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
+    border: '1.5px solid rgba(251,191,36,0.6)',
+    textShadow: '0 1px 2px rgba(180,83,9,0.5)',
+    borderRadius: '0',
+  },
+  // 2nd — 亮银
+  {
+    background: 'linear-gradient(135deg, #cbd5e1 0%, #94a3b8 40%, #64748b 100%)',
+    boxShadow: '0 2px 12px rgba(148,163,184,0.5), inset 0 1px 0 rgba(255,255,255,0.35)',
+    border: '1.5px solid rgba(203,213,225,0.6)',
+    textShadow: '0 1px 2px rgba(71,85,105,0.5)',
+    borderRadius: '0',
+  },
+  // 3rd — 古铜
+  {
+    background: 'linear-gradient(135deg, #d4a373 0%, #b45309 40%, #78350f 100%)',
+    boxShadow: '0 2px 12px rgba(180,83,9,0.45), inset 0 1px 0 rgba(255,255,255,0.2)',
+    border: '1.5px solid rgba(212,163,115,0.5)',
+    textShadow: '0 1px 2px rgba(120,53,15,0.5)',
+    borderRadius: '0',
+  },
+];
+function rankStyle(idx) {
+  return RANK_STYLES[idx] || {
+    background: 'linear-gradient(135deg, #4b5563, #1f2937)',
+    boxShadow: '0 1px 6px rgba(0,0,0,0.25)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    textShadow: '0 1px 1px rgba(0,0,0,0.4)',
+    borderRadius: '0',
+  };
 }
 
 function addFeatured() {

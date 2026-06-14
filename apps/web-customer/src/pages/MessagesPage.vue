@@ -6,7 +6,7 @@
     </div>
   </Teleport>
 
-  <div class="fixed top-[52px] left-0 right-0 bottom-0 flex z-[1]">
+  <div class="fixed top-[52px] left-0 right-0 flex z-[1]" :class="player.track ? 'bottom-16' : 'bottom-0'">
     <!-- 左侧会话列表 -->
     <div class="w-[300px] shrink-0 border-r border-black/5 bg-white/50 flex flex-col">
       <div class="px-5 py-4 text-sm font-semibold text-black border-b border-black/5">消息</div>
@@ -19,15 +19,22 @@
           :key="c.partner.id"
           @click="select(c.partner)"
           :class="[
-            'px-5 py-4 border-b border-black/[0.03] cursor-pointer hover:bg-black/[0.02] transition-colors',
+            'px-5 py-4 border-b border-black/[0.03] cursor-pointer hover:bg-black/[0.02] transition-colors flex items-center gap-3',
             activeId === c.partner.id ? 'bg-[rgb(196,147,51)]/5 border-l-[3px] border-l-[rgb(196,147,51)]' : '',
           ]"
         >
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-sm font-medium text-black">{{ c.partner.name || c.partner.email }}</span>
-            <span v-if="c.unreadCount > 0" class="text-[11px] bg-[rgb(196,147,51)] text-white px-1.5 py-0.5 rounded-full font-medium">{{ c.unreadCount }}</span>
+          <!-- 头像 -->
+          <router-link :to="`/user/${c.partner.id}`" @click.stop class="shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm font-medium overflow-hidden hover:ring-2 hover:ring-[rgb(196,147,51)]/50 transition-all cursor-pointer">
+            <img v-if="c.partner.avatar" :src="coverSrc(c.partner.avatar)" class="w-full h-full object-cover" />
+            <span v-else>{{ (c.partner.name || c.partner.email || '?').slice(0, 1).toUpperCase() }}</span>
+          </router-link>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-medium text-black">{{ c.partner.storeName || c.partner.name || c.partner.email }}</span>
+              <span v-if="c.unreadCount > 0" class="text-[11px] bg-[rgb(196,147,51)] text-white px-1.5 py-0.5 rounded-full font-medium">{{ c.unreadCount }}</span>
+            </div>
+            <p class="text-xs text-black/30 truncate">{{ formatConversationPreview(c.lastMsg) }}</p>
           </div>
-          <p class="text-xs text-black/30 truncate">{{ c.lastMsg?.imageUrl ? '[图片]' : (c.lastMsg?.content || '暂无消息') }}</p>
         </div>
       </div>
     </div>
@@ -37,7 +44,7 @@
       <template v-if="active">
         <!-- Header -->
         <div class="px-5 py-4 border-b border-black/5 shrink-0">
-          <p class="font-semibold text-black text-[15px]">{{ active.name || active.email }}</p>
+          <p class="font-semibold text-black text-[15px]">{{ active.storeName || active.name || active.email }}</p>
         </div>
 
         <!-- 消息列表 -->
@@ -51,7 +58,20 @@
               msg.senderId === myUserId ? 'ml-auto' : 'mr-auto',
             ]"
           >
+            <!-- 评论通知卡片 -->
             <div
+              v-if="isCommentNotification(msg)"
+              @click="goToAlbum(msg)"
+              class="bg-[rgb(196,147,51)]/5 border border-[rgb(196,147,51)]/20 rounded-xl px-4 py-3 cursor-pointer hover:bg-[rgb(196,147,51)]/10 transition-colors max-w-[320px]"
+            >
+              <p class="text-xs text-[rgb(196,147,51)] mb-1">💬 评论回复</p>
+              <p class="text-sm text-black/70 leading-relaxed">{{ getCommentNotifyText(msg) }}</p>
+              <p class="text-xs text-black/30 mt-1.5">点击查看 →</p>
+            </div>
+
+            <!-- 普通消息 -->
+            <div
+              v-else
               :class="msg.senderId === myUserId
                 ? 'bg-[rgb(196,147,51)] text-white rounded-bl-2xl'
                 : 'bg-gray-100 text-black rounded-br-2xl'"
@@ -95,8 +115,12 @@
 
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import { io } from 'socket.io-client';
 import { fetchConversations, fetchMessages, markMessagesRead, uploadChatImage } from '@vinyl-store/shared';
+import { player } from '../stores/player';
+
+const router = useRouter();
 
 const msgList = ref(null);
 const conversations = ref([]);
@@ -111,6 +135,12 @@ const connectionError = ref('');
 const uploading = ref(false);
 const previewImage = ref(null);
 const fileInput = ref(null);
+
+function coverSrc(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : `/${url}`
+}
 
 const myUserId = ref(null);
 try {
@@ -231,8 +261,12 @@ onMounted(() => {
       ((msg.senderId === myUserId.value && msg.receiverId === active.value.id) ||
        (msg.senderId === active.value.id && msg.receiverId === myUserId.value))
     ) {
+      // 去重
+      if (msg.id > 0 && messages.value.some((m) => m.id === msg.id)) {
+        return;
+      }
       const dup = messages.value.findIndex((m) =>
-        m.senderId === msg.senderId && m.content === msg.content && m.id < 0,
+        m.id < 0 && m.senderId === msg.senderId && m.content === msg.content,
       );
       if (dup !== -1) {
         messages.value[dup] = msg;
@@ -250,6 +284,41 @@ onMounted(() => {
 
   loadConversations();
 });
+
+// 会话列表预览文案
+function formatConversationPreview(lastMsg) {
+  if (!lastMsg) return '暂无消息';
+  if (lastMsg.imageUrl) return '[图片]';
+  if (isCommentNotification(lastMsg)) return '💬 ' + getCommentNotifyText(lastMsg);
+  return lastMsg.content || '';
+}
+
+// 判断是否为评论通知消息
+function isCommentNotification(msg) {
+  try {
+    const data = JSON.parse(msg.content || '{}');
+    return data.type === 'comment_reply';
+  } catch { return false; }
+}
+
+// 获取评论通知的可读文本
+function getCommentNotifyText(msg) {
+  try {
+    const data = JSON.parse(msg.content || '{}');
+    return `在《${data.albumTitle}》中回复了你`;
+  } catch { return msg.content; }
+}
+
+// 点击跳转到专辑详情页
+function goToAlbum(msg) {
+  try {
+    const data = JSON.parse(msg.content || '{}');
+    if (data.albumSlug) {
+      const q = data.commentId ? `?commentId=${data.commentId}` : '';
+      router.push(`/albums/${data.albumSlug}${q}`);
+    }
+  } catch {}
+}
 
 onBeforeUnmount(() => {
   socket.value?.disconnect();

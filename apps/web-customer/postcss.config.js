@@ -4,3 +4,4 @@ export default {
     autoprefixer: {},
   },
 }
+// 配置 tailwindcss

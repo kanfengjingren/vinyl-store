@@ -7,6 +7,17 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get(':id/profile')
+  findPublicProfile(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findPublicProfile(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/purchases')
+  findPurchases(@Req() req: any) {
+    return this.usersService.findPurchases(req.user.userId);
+  }
+
   @Get(':id')
   findById(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findById(id);
@@ -16,6 +27,12 @@ export class UsersController {
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/avatar')
+  updateAvatar(@Req() req: any, @Body('avatar') avatar: string) {
+    return this.usersService.updateAvatar(req.user.userId, avatar);
   }
 
   @UseGuards(JwtAuthGuard)

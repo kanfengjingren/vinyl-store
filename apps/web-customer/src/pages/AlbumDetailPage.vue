@@ -60,13 +60,22 @@
           <p class="text-[17px] text-white/70 leading-relaxed mb-6">{{ album.description }}</p>
           <p class="text-[32px] font-semibold tracking-[-0.02em] mb-6">&yen;{{ album.price }}</p>
           <p class="text-[13px] text-white/40 mb-4">库存: {{ album.stock }} 张</p>
-          <button @click="handleBuy" :disabled="album.stock <= 0"
-            class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-[15px] font-semibold border-none cursor-pointer transition-all"
-            :class="album.stock <= 0
-              ? 'bg-white/10 text-white/30 cursor-not-allowed'
-              : 'bg-[rgb(196,147,51)] text-white hover:bg-[rgb(176,127,31)] hover:scale-105'">
-            {{ album.stock <= 0 ? '已售罄' : '加入购物车' }}
-          </button>
+          <div class="flex items-center gap-4">
+            <button @click="handleBuy" :disabled="album.stock <= 0"
+              class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-[15px] font-semibold border-none cursor-pointer transition-all"
+              :class="album.stock <= 0
+                ? 'bg-white/10 text-white/30 cursor-not-allowed'
+                : 'bg-[rgb(196,147,51)] text-white hover:bg-[rgb(176,127,31)] hover:scale-105'">
+              {{ album.stock <= 0 ? '已售罄' : '加入购物车' }}
+            </button>
+            <button
+              v-if="auth.isLoggedIn"
+              @click="toggleFav"
+              class="text-[28px] leading-none transition-all hover:scale-125 select-none"
+              :class="favorited ? 'text-red-400' : 'text-white/40 hover:text-red-300'"
+              :title="favorited ? '取消收藏' : '收藏'"
+            >{{ favorited ? '♥' : '♡' }}</button>
+          </div>
 
           <!-- Tracks -->
           <div class="mt-10">
@@ -97,18 +106,24 @@
       <div class="mt-12 pt-8 border-t border-white/10">
         <router-link to="/" class="text-[15px] font-medium text-[rgb(196,147,51)] no-underline hover:underline">&larr; 返回全部收藏</router-link>
       </div>
+
+      <!-- 评论区 -->
+      <div class="mt-12 pt-8 border-t border-white/10" v-if="album.id">
+        <CommentSection :album-id="album.id" :highlight-comment-id="highlightCommentId" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAlbumStore } from '../stores/albums';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
-import { useModalStore } from '@vinyl-store/shared';
+import { useModalStore, toggleFavorite, fetchFavorites } from '@vinyl-store/shared';
 import { player, usePlayer } from '../stores/player';
+import CommentSection from '../components/comment/CommentSection.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -119,6 +134,11 @@ const modal = useModalStore();
 const { play } = usePlayer();
 const album = ref(null);
 const loading = ref(false);
+const favorited = ref(false);
+const highlightCommentId = computed(() => {
+  const id = parseInt(route.query.commentId);
+  return isNaN(id) ? null : id;
+});
 
 watch(() => route.params.slug, load, { immediate: true });
 
@@ -126,11 +146,24 @@ async function load() {
   loading.value = true;
   try {
     album.value = await albumStore.loadAlbum(route.params.slug);
-    console.log(album.value);
-    
+    // 检查收藏状态
+    if (auth.isLoggedIn && album.value) {
+      try {
+        const favs = await fetchFavorites();
+        favorited.value = favs.some((f) => f.album?.id === album.value.id);
+      } catch {}
+    }
   } finally {
     loading.value = false;
   }
+}
+
+async function toggleFav() {
+  if (!album.value) return;
+  try {
+    const res = await toggleFavorite(album.value.id);
+    favorited.value = res.favorited;
+  } catch {}
 }
 
 function coverSrc(url) {
@@ -140,10 +173,11 @@ function coverSrc(url) {
 
 function onPlay(track) {
   if (player.track?.id === track.id) {
-    // 同一首 → 不操作，让用户通过底部播放器控制
+    // 同一首 → 打开全屏播放器
+    player.showFullPlayer = true
     return
   }
-  play(track, album.value?.artist)
+  play(track, album.value?.artist, album.value)
 }
 
 async function handleBuy() {

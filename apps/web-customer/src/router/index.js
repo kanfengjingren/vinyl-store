@@ -7,28 +7,28 @@ const routes = [
     name: 'home',
     component: () => import('../pages/HomePage.vue'),
   },
-  {
-    path: '/admin',
-    name: 'manage',
-    component: () => import('../pages/ControllerPage.vue'),
-    children: [
-      {
-        path: '/admin/create',
-        name: 'createAlbum',
-        component: () => import('../components/manage/CreateAlbum.vue'),
-      },
-      {
-        path: '/admin/album-list',
-        name: 'album-list',
-        component: () => import('../components/manage/AlbumList.vue'),
-      },
-      {
-        path: '/admin/orders',
-        name: 'order-manage',
-        component: () => import('../components/manage/OrderManage.vue'),
-      },
-    ]
-  },
+  // {
+  //   path: '/admin',
+  //   name: 'manage',
+  //   component: () => import('../pages/ControllerPage.vue'),
+  //   children: [
+  //     {
+  //       path: '/admin/create',
+  //       name: 'createAlbum',
+  //       component: () => import('../components/manage/CreateAlbum.vue'),
+  //     },
+  //     {
+  //       path: '/admin/album-list',
+  //       name: 'album-list',
+  //       component: () => import('../components/manage/AlbumList.vue'),
+  //     },
+  //     {pnpm 
+  //       path: '/admin/orders',
+  //       name: 'order-manage',
+  //       component: () => import('../components/manage/OrderManage.vue'),
+  //     },
+  //   ]
+  // },
   {
     path: '/albums/:slug',
     name: 'album-detail',
@@ -90,6 +90,11 @@ const routes = [
     component: () => import('../pages/SearchPage.vue'),
   },
   {
+    path: '/user/:id',
+    name: 'user-profile',
+    component: () => import('../pages/PublicProfilePage.vue'),
+  },
+  {
     path: '/profile',
     name: 'profile',
     component: () => import('../pages/UserProfilePage.vue'),
@@ -124,6 +129,9 @@ const router = createRouter({
   },
 });
 
+
+
+//全局守卫
 router.beforeEach((to) => {
   const auth = useAuthStore();
 

@@ -59,3 +59,18 @@ export function forgotPassword(email) {
 export function resetPassword(email, code, newPassword) {
   return api.post('/auth/reset-password', { email, code, newPassword }).then((r) => r.data);
 }
+
+/** 获取用户已购买的专辑及曲目 */
+export function fetchPurchases() {
+  return api.get('/users/me/purchases').then((r) => r.data);
+}
+
+/** 更新用户头像 */
+export function updateAvatar(avatar) {
+  return api.patch('/users/me/avatar', { avatar }).then((r) => r.data);
+}
+
+/** 获取用户公开资料 */
+export function fetchPublicProfile(userId) {
+  return api.get(`/users/${userId}/profile`).then((r) => r.data);
+}

@@ -40,6 +40,12 @@ export class AlbumsController {
     return this.albumsService.findAll(query);
   }
 
+  @Get('hot')
+  findHotAlbums(@Query('limit') limit?: string) {
+    const n = limit ? parseInt(limit, 10) || 12 : 12;
+    return this.albumsService.findHotAlbums(Math.min(n, 50));
+  }
+
   @Get(':slug')
   findBySlug(@Param('slug') slug: string) {
     return this.albumsService.findBySlug(slug);

@@ -160,7 +160,7 @@ async function handleLogin() {
   error.value = '';
   loading.value = true;
   try {
-    const data = await auth.login({ email: form.email, password: form.password });
+    const data = await auth.login({ email: form.email, password: form.password, portal: 'customer' });
     if (data.user.role === 'ADMIN') {
       router.push('/admin/album-list');
       return;

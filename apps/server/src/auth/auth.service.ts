@@ -39,7 +39,7 @@ export class AuthService {
     });
 
     const token = this.signToken(user);
-    return { user: { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance }, token };
+    return { user: { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance, avatar: user.avatar }, token };
   }
 
   async login(dto: LoginDto) {
@@ -49,6 +49,12 @@ export class AuthService {
     const passwordValid = await this.verifyPassword(dto.password, user.password);
     if (!passwordValid) throw new UnauthorizedException('邮箱或密码错误');
 
+    // 顾客端登录：拒绝非 CUSTOMER 角色
+    if (dto.portal === 'customer' && user.role !== 'CUSTOMER') {
+      const msg = user.role === 'SELLER' ? '商家请从商家端登录' : '管理员请从管理端登录';
+      throw new UnauthorizedException(msg);
+    }
+
     // 老用户明文密码自动升级为 bcrypt
     if (!user.password.startsWith('$2')) {
       const hashed = await bcrypt.hash(dto.password, 10);
@@ -56,7 +62,7 @@ export class AuthService {
     }
 
     const token = this.signToken(user);
-    return { user: { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance }, token };
+    return { user: { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance, avatar: user.avatar }, token };
   }
 
   async getMe(userId: number) {
@@ -65,13 +71,13 @@ export class AuthService {
       include: { seller: { select: { id: true, storeName: true, contactEmail: true, contactPhone: true, description: true, status: true, balance: true } } },
     });
     if (!user) throw new UnauthorizedException('用户不存在');
-    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance, seller: user.seller };
+    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance, avatar: user.avatar, seller: user.seller };
   }
 
   async getProfile(userId: number) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('用户不存在');
-    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance };
+    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance, avatar: user.avatar };
   }
 
   async changePassword(userId: number, oldPassword: string, newPassword: string) {

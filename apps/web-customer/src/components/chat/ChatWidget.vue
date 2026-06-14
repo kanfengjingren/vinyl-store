@@ -146,9 +146,14 @@ async function connect() {
       (msg.senderId === myUserId.value && msg.receiverId === props.sellerId) ||
       (msg.senderId === props.sellerId && msg.receiverId === myUserId.value)
     ) {
-      // 去重：如果已经有一条相同的乐观消息（临时 ID），替换它
+      // 去重
+      // 1) 已有相同真实 ID → 跳过
+      if (msg.id > 0 && messages.value.some((m) => m.id === msg.id)) {
+        return;
+      }
+      // 2) 替换临时乐观消息（相同发送者 + 相同内容）
       const dup = messages.value.findIndex((m) =>
-        m.senderId === msg.senderId && m.content === msg.content && m.id < 0,
+        m.id < 0 && m.senderId === msg.senderId && m.content === msg.content,
       );
       if (dup !== -1) {
         messages.value[dup] = msg;

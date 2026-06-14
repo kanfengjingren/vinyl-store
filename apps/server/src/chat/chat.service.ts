@@ -9,7 +9,7 @@ export class ChatService {
     return this.prisma.message.create({
       data: { senderId, receiverId, content: content || '', imageUrl: imageUrl || null },
       include: {
-        sender: { select: { id: true, name: true } },
+        sender: { select: { id: true, name: true, avatar: true } },
       },
     });
   }
@@ -23,7 +23,7 @@ export class ChatService {
         ],
       },
       include: {
-        sender: { select: { id: true, name: true } },
+        sender: { select: { id: true, name: true, avatar: true } },
       },
       orderBy: { createdAt: 'asc' },
       take: 100,
@@ -34,17 +34,17 @@ export class ChatService {
     // 找所有跟我有消息往来的用户
     const sent = await this.prisma.message.findMany({
       where: { senderId: userId },
-      select: { receiverId: true, receiver: { select: { id: true, name: true, email: true } } },
+      select: { receiverId: true, receiver: { select: { id: true, name: true, email: true, avatar: true } } },
       distinct: ['receiverId'],
     });
 
     const received = await this.prisma.message.findMany({
       where: { receiverId: userId },
-      select: { senderId: true, sender: { select: { id: true, name: true, email: true } } },
+      select: { senderId: true, sender: { select: { id: true, name: true, email: true, avatar: true } } },
       distinct: ['senderId'],
     });
 
-    const partnerMap = new Map<number, { id: number; name: string | null; email: string }>();
+    const partnerMap = new Map<number, { id: number; name: string | null; email: string; avatar: string | null }>();
     for (const r of sent) {
       partnerMap.set(r.receiverId, r.receiver);
     }
@@ -54,9 +54,19 @@ export class ChatService {
       }
     }
 
+    // 查哪些 partner 是卖家，拿厂牌名
+    const partnerIds = [...partnerMap.keys()];
+    const sellers = partnerIds.length > 0
+      ? await this.prisma.seller.findMany({
+          where: { userId: { in: partnerIds } },
+          select: { userId: true, storeName: true },
+        })
+      : [];
+    const sellerMap = new Map(sellers.map((s) => [s.userId, s.storeName]));
+
     // 为每个 partner 获取最后一条消息和未读数
     const result: Array<{
-      partner: { id: number; name: string | null; email: string };
+      partner: { id: number; name: string | null; email: string; avatar: string | null; storeName: string | null };
       lastMsg: { content: string; createdAt: Date; senderId: number } | null;
       unreadCount: number;
     }> = [];
@@ -77,7 +87,17 @@ export class ChatService {
         where: { senderId: partnerId, receiverId: userId, read: false },
       });
 
-      result.push({ partner, lastMsg, unreadCount });
+      result.push({
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          email: partner.email,
+          avatar: partner.avatar,
+          storeName: sellerMap.get(partner.id) || null,
+        },
+        lastMsg,
+        unreadCount,
+      });
     }
 
     // 按最后消息时间排序
@@ -93,6 +113,19 @@ export class ChatService {
   async markAsRead(senderId: number, receiverId: number) {
     return this.prisma.message.updateMany({
       where: { senderId, receiverId, read: false },
+      data: { read: true },
+    });
+  }
+
+  async getUnreadCount(userId: number) {
+    return this.prisma.message.count({
+      where: { receiverId: userId, read: false },
+    });
+  }
+
+  async markAllAsRead(userId: number) {
+    return this.prisma.message.updateMany({
+      where: { receiverId: userId, read: false },
       data: { read: true },
     });
   }

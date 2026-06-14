@@ -238,6 +238,63 @@ export class AlbumsService {
     ]);
   }
 
+  /** 热销专辑：近30天销量排行 */
+  async findHotAlbums(limit: number = 12) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const result = await this.prisma.orderItem.groupBy({
+      by: ['albumId'],
+      where: {
+        status: { in: ['ACTIVE', 'SHIPPED'] },
+        albumId: { not: null },
+        order: {
+          status: { in: ['PAID', 'DELIVERED'] },
+          createdAt: { gte: thirtyDaysAgo },
+        },
+      },
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: 'desc' } },
+      take: limit,
+    });
+
+    const albumIds = result.map((r) => r.albumId).filter(Boolean) as number[];
+
+    if (albumIds.length === 0) {
+      return { data: [] };
+    }
+
+    const albums = await this.prisma.album.findMany({
+      where: { id: { in: albumIds }, status: 'ACTIVE' },
+      include: {
+        artistRel: { select: { id: true, name: true, slug: true } },
+        seller: { select: { id: true, storeName: true } },
+        categories: { include: { category: true } },
+        _count: { select: { tracks: true } },
+      },
+    });
+
+    // albumId → 销量
+    const salesMap = new Map(
+      result.map((r) => [r.albumId!, r._sum.quantity ?? 0]),
+    );
+
+    // 按销量排序
+    const albumMap = new Map(albums.map((a) => [a.id, a]));
+    const sorted = albumIds
+      .map((id) => albumMap.get(id))
+      .filter((a): a is typeof albums[number] => a != null)
+      .map(({ categories, _count, artistRel, ...album }) => ({
+        ...album,
+        artistInfo: artistRel,
+        categories: categories.map((ac) => ac.category),
+        trackCount: _count.tracks,
+        hotSales: salesMap.get(album.id) ?? 0,
+      }));
+
+    return { data: sorted };
+  }
+
   /** 卖家查看自己的专辑（含已下架） */
   async findMyAlbums(userId: number, page = 1, limit = 12) {
     const seller = await this.prisma.seller.findUnique({ where: { userId } });
