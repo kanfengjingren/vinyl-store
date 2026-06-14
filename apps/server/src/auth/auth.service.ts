@@ -65,13 +65,13 @@ export class AuthService {
       include: { seller: { select: { id: true, storeName: true, contactEmail: true, contactPhone: true, description: true, status: true, balance: true } } },
     });
     if (!user) throw new UnauthorizedException('用户不存在');
-    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance, seller: user.seller };
+    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance, avatar: user.avatar, seller: user.seller };
   }
 
   async getProfile(userId: number) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('用户不存在');
-    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance };
+    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance, avatar: user.avatar };
   }
 
   async changePassword(userId: number, oldPassword: string, newPassword: string) {

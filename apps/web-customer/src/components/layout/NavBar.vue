@@ -29,7 +29,13 @@
               {{ unreadCount > 99 ? '99+' : unreadCount }}
             </span>
           </router-link>
-          <router-link v-if="!auth.isAdmin" to="/profile" class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">{{ auth.user?.name || auth.user?.email }}</router-link>
+          <router-link v-if="!auth.isAdmin" to="/profile" class="flex items-center gap-2 text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">
+            <span class="w-6 h-6 rounded-full overflow-hidden bg-gray-100 shrink-0">
+              <img v-if="auth.user?.avatar" :src="coverSrc(auth.user.avatar)" class="w-full h-full object-cover" />
+              <span v-else class="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-400">{{ (auth.user?.name || auth.user?.email || '?').slice(0, 1).toUpperCase() }}</span>
+            </span>
+            {{ auth.user?.name || auth.user?.email }}
+          </router-link>
           <button @click="handleLogout"
             class="text-[13px] text-apple-secondary hover:text-apple-text transition-colors">退出</button>
           <router-link v-if="auth.isAdmin" to="/admin/album-list"
@@ -105,6 +111,12 @@ watch(() => auth.isLoggedIn, (val) => {
 
 onMounted(() => { if (auth.isLoggedIn) connectSocket(); });
 onBeforeUnmount(() => disconnectSocket());
+
+function coverSrc(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : `/${url}`
+}
 
 function handleLogout() {
   disconnectSocket();

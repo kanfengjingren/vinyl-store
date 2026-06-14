@@ -25,6 +25,12 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch('me/avatar')
+  updateAvatar(@Req() req: any, @Body('avatar') avatar: string) {
+    return this.usersService.updateAvatar(req.user.userId, avatar);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('recharge')
   recharge(@Req() req: any, @Body() body: { amount: number }) {
     return this.usersService.recharge(req.user.userId, body.amount);

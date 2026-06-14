@@ -9,13 +9,19 @@ export class UsersService {
   async findById(id: number) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('用户不存在');
-    return { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance };
+    return { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance, avatar: user.avatar };
   }
 
   async update(id: number, dto: UpdateUserDto) {
     await this.findById(id);
     const user = await this.prisma.user.update({ where: { id }, data: dto });
     return { id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance };
+  }
+
+  async updateAvatar(userId: number, avatar: string) {
+    await this.findById(userId);
+    const user = await this.prisma.user.update({ where: { id: userId }, data: { avatar } });
+    return { avatar: user.avatar };
   }
 
   async recharge(userId: number, amount: number) {

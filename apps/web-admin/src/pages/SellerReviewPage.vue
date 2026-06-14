@@ -4,7 +4,7 @@
 
     <!-- Tabs -->
     <div class="flex gap-1 mb-6 border-b border-black/10">
-      <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key" :class="[
+      <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key; searchQuery = ''" :class="[
         'px-5 py-2.5 text-sm font-medium transition-colors relative -mb-[1px]',
         activeTab === tab.key
           ? 'text-black border-b-2 border-[rgb(196,147,51)]'
@@ -15,10 +15,20 @@
       </button>
     </div>
 
+    <!-- 搜索 -->
+    <div class="mb-5">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="搜索厂牌名、用户名或邮箱..."
+        class="w-full max-w-[420px] px-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[rgb(196,147,51)] transition-colors"
+      />
+    </div>
+
     <div v-if="loading" class="text-center py-16 text-black/40">加载中...</div>
 
     <div v-else-if="!filteredSellers.length" class="text-center py-16 text-black/40">
-      <p class="text-[15px]">暂无{{ activeTab === 'PENDING' ? '待审核' : activeTab === 'APPROVED' ? '已通过' : '已拒绝' }}的卖家</p>
+      <p class="text-[15px]">{{ searchQuery ? '未搜索到匹配的卖家' : `暂无${activeTab === 'PENDING' ? '待审核' : activeTab === 'APPROVED' ? '已通过' : '已拒绝'}的卖家` }}</p>
     </div>
 
     <div v-else class="space-y-3">
@@ -80,6 +90,7 @@ const modal = useModalStore();
 const sellers = ref([]);
 const loading = ref(false);
 const activeTab = ref('PENDING');
+const searchQuery = ref('');
 
 const tabs = [
   { key: 'PENDING', label: '待审核' },
@@ -89,9 +100,19 @@ const tabs = [
 
 const pendingCount = computed(() => sellers.value.filter(s => s.status === 'PENDING').length);
 
-const filteredSellers = computed(() =>
-  sellers.value.filter(s => s.status === activeTab.value)
-);
+const filteredSellers = computed(() => {
+  let list = sellers.value.filter(s => s.status === activeTab.value);
+  const q = searchQuery.value.trim().toLowerCase();
+  if (q) {
+    list = list.filter(s =>
+      s.storeName?.toLowerCase().includes(q) ||
+      s.user?.name?.toLowerCase().includes(q) ||
+      s.user?.email?.toLowerCase().includes(q) ||
+      s.contactEmail?.toLowerCase().includes(q)
+    );
+  }
+  return list;
+});
 
 async function load() {
   loading.value = true;

@@ -22,7 +22,7 @@ const routes = [
   //       name: 'album-list',
   //       component: () => import('../components/manage/AlbumList.vue'),
   //     },
-  //     {
+  //     {pnpm 
   //       path: '/admin/orders',
   //       name: 'order-manage',
   //       component: () => import('../components/manage/OrderManage.vue'),

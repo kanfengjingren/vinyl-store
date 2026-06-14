@@ -64,3 +64,8 @@ export function resetPassword(email, code, newPassword) {
 export function fetchPurchases() {
   return api.get('/users/me/purchases').then((r) => r.data);
 }
+
+/** 更新用户头像 */
+export function updateAvatar(avatar) {
+  return api.patch('/users/me/avatar', { avatar }).then((r) => r.data);
+}

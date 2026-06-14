@@ -1,9 +1,16 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ChatService } from '../chat/chat.service';
+import { ChatGateway } from '../chat/chat.gateway';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => ChatGateway))
+    private readonly chatGateway: ChatGateway,
+    private readonly chatService: ChatService,
+  ) {}
 
   async checkout(userId: number, shippingAddress?: string) {
     // 1. Read cart with items
@@ -335,7 +342,7 @@ export class OrdersService {
     //订单：根据订单id去找，
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { items: { include: { album: { select: { sellerId: true, status: true } } } } },
+      include: { items: { include: { album: { select: { id: true, sellerId: true, status: true, title: true } } } } },
     });
 
     if (!order) throw new NotFoundException('订单不存在');
@@ -359,8 +366,13 @@ export class OrdersService {
       throw new BadRequestException('该订单中包含已下架专辑，请先完成退款后再发货');
     }
 
-    
-    return this.prisma.$transaction(async (tx) => {
+    // 本次发货的专辑名
+    const shippedTitles = myItems
+      .filter((item) => item.status === 'ACTIVE')
+      .map((item) => `《${item.album?.title || '未知专辑'}》`)
+      .join('、');
+
+    const result = await this.prisma.$transaction(async (tx) => {
       // 将该卖家的 ACTIVE item 标记为 SHIPPED，并计算货款
       let sellerRevenue = 0;
       for (const item of myItems) {
@@ -397,5 +409,19 @@ export class OrdersService {
         include: { items: true },
       });
     });
+
+    // 发货成功后自动发送消息通知买家
+    if (shippedTitles && order.userId !== userId) {
+      try {
+        const content = `您的订单 #${orderId} 已发货！${shippedTitles} 正在路上，请注意查收。`;
+        const message = await this.chatService.saveMessage(userId, order.userId, content);
+        // Socket.IO 实时推送给买家
+        this.chatGateway.server.to(`user:${order.userId}`).emit('newMessage', message);
+        // 推送未读数更新
+        this.chatGateway.pushUnreadCount(order.userId);
+      } catch {}
+    }
+
+    return result;
   }
 }

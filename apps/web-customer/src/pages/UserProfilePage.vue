@@ -20,7 +20,22 @@
       <div v-if="activeTab === 'profile'">
         <div v-if="profileLoading" class="text-center py-20 text-gray-400 text-sm">加载中...</div>
         <template v-else>
-          <div class="mb-6 pt-10">
+          <!-- 头像 -->
+          <div class="pt-10 pb-8 flex flex-col items-center">
+            <div class="relative group">
+              <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shadow-md">
+                <img v-if="profile.avatar" :src="coverSrc(profile.avatar)" class="w-full h-full object-cover" />
+                <span v-else class="text-3xl font-semibold text-gray-400">{{ (profile.name || profile.email || '?').slice(0, 1).toUpperCase() }}</span>
+              </div>
+              <label class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <span class="text-white text-xs font-medium">{{ uploading ? '上传中...' : '更换头像' }}</span>
+                <input type="file" accept="image/*" class="hidden" @change="onAvatarChange" :disabled="uploading" />
+              </label>
+            </div>
+            <p v-if="avatarError" class="text-red-400 text-xs mt-2">{{ avatarError }}</p>
+          </div>
+
+          <div class="mb-6">
             <label class="block text-sm text-gray-500 mb-1.5">账户余额</label>
             <p class="text-[15px] bg-gray-50 px-4 py-3">&yen;{{ profile.balance ?? 0 }}</p>
           </div>
@@ -180,7 +195,8 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchProfile, updateProfile, recharge, changePassword, fetchPurchases, fetchFavorites, fetchPlayHistory } from '@vinyl-store/shared'
+import { fetchProfile, updateProfile, recharge, changePassword, fetchPurchases, fetchFavorites, fetchPlayHistory, updateAvatar } from '@vinyl-store/shared'
+import api from '@vinyl-store/shared/api/client'
 import { useCartStore } from '../stores/cart'
 import { usePlayer } from '../stores/player'
 import CitySelect from '@vinyl-store/shared/ui/CitySelect'
@@ -217,6 +233,36 @@ const pwdSaving = ref(false)
 const pwdMsg = ref('')
 const pwdOk = ref(false)
 
+// Avatar
+const uploading = ref(false)
+const avatarError = ref('')
+
+async function onAvatarChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (file.size > 3 * 1024 * 1024) {
+    avatarError.value = '图片大小不能超过 3MB'
+    return
+  }
+  uploading.value = true
+  avatarError.value = ''
+  try {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await api.post('/upload/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+    const url = res.data?.url || res.url
+    if (url) {
+      await updateAvatar(url)
+      profile.value.avatar = url
+    }
+    e.target.value = ''
+  } catch (err) {
+    avatarError.value = err.response?.data?.message || '上传失败'
+  } finally {
+    uploading.value = false
+  }
+}
+
 // Purchases
 const purchases = ref([])
 const purchasesLoading = ref(false)
@@ -234,7 +280,8 @@ const purchasedIds = ref(new Set())
 
 function coverSrc(url) {
   if (!url) return ''
-  return url.startsWith('http') ? url : `/${url}`
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : `/${url}`
 }
 
 function timeAgo(dateStr) {

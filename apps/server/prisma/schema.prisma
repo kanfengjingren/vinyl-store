@@ -17,6 +17,7 @@ model User {
   name           String?
   role           Role      @default(CUSTOMER)
   defaultAddress String?   @db.Text
+  avatar           String?
   balance           Int       @default(0)
   resetCode         String?
   resetCodeExpires  DateTime?
