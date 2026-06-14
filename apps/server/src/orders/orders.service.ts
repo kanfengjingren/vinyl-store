@@ -26,10 +26,21 @@ export class OrdersService {
     }
     
 
-    // 2. Validate stock for all items
+    // 2. Validate stock & ownership for all items
     for (const item of cart.items) {
       if (item.album.stock < item.quantity) {
         throw new BadRequestException(`"${item.album.title}" 库存不足`);
+      }
+      // 检查是否已购买且已发货
+      const owned = await this.prisma.orderItem.findFirst({
+        where: {
+          albumId: item.albumId,
+          status: { in: ['ACTIVE', 'SHIPPED'] },
+          order: { userId, status: { in: ['PAID', 'DELIVERED'] } },
+        },
+      });
+      if (owned) {
+        throw new BadRequestException(`"${item.album.title}" 已购买且已发货，不可重复购买`);
       }
     }
 
