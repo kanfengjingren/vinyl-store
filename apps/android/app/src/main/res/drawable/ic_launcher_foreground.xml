@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 黑胶唱片简化图标 -->
+    <group
+        android:translateX="27"
+        android:translateY="27">
+        <!-- 外圈 -->
+        <path
+            android:fillColor="#C49333"
+            android:pathData="M27,0C41.912,0 54,12.088 54,27C54,41.912 41.912,54 27,54C12.088,54 0,41.912 0,27C0,12.088 12.088,0 27,0Z" />
+        <!-- 内圈 -->
+        <path
+            android:fillColor="#1A1A2E"
+            android:pathData="M27,9C36.941,9 45,17.059 45,27C45,36.941 36.941,45 27,45C17.059,45 9,36.941 9,27C9,17.059 17.059,9 27,9Z" />
+        <!-- 中心孔 -->
+        <path
+            android:fillColor="#C49333"
+            android:pathData="M27,21C30.314,21 33,23.686 33,27C33,30.314 30.314,33 27,33C23.686,33 21,30.314 21,27C21,23.686 23.686,21 27,21Z" />
+        <!-- 高光 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.15"
+            android:pathData="M13,13L18,10L27,8L27,0L13,13Z" />
+    </group>
+</vector>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-xl font-semibold tracking-[-0.02em] mb-6">订单管理</h2>
+    <h2 class="text-xl font-semibold tracking-[-0.02em]  mb-6">订单管理</h2>
 
     <!-- Tabs -->
     <div class="flex gap-1 mb-6 border-b border-black/10">

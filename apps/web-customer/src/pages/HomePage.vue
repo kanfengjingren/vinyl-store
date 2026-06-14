@@ -265,7 +265,6 @@ function addFeatured() {
     coverUrl: featured.value.coverUrl ? coverSrc(featured.value.coverUrl) : '',
     gradient: featured.value.gradient || '',
   });
-  cart.open();
 }
 </script>
 

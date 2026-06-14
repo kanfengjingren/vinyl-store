@@ -41,16 +41,10 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
-import { useAuthStore } from '../../stores/auth'
-import { useModalStore } from '@vinyl-store/shared'
 
 const props = defineProps({ album: Object })
 const cart = useCartStore()
-const auth = useAuthStore()
-const modal = useModalStore()
-const router = useRouter()
 
 function coverSrc(url) {
   if (!url) return ''
@@ -58,16 +52,6 @@ function coverSrc(url) {
 }
 
 async function handleBuy() {
-  if (!auth.isLoggedIn) {
-    const ok = await modal.open({
-      message: '您还未登录，请先登录',
-      confirmText: '去登录',
-      cancelText: '取消',
-    })
-    if (ok) router.push('/login')
-    return
-  }
   cart.add(props.album)
-  cart.open()
 }
 </script>

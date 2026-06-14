@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#1A1A2E</color>
+    <string name="app_name">幻觉贸易</string>
+    <style name="Theme.VinylStore" parent="android:Theme.Material.Light.NoActionBar"/>
+</resources>

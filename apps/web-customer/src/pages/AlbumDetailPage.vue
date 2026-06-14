@@ -116,21 +116,18 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAlbumStore } from '../stores/albums';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
-import { useModalStore, toggleFavorite, fetchFavorites } from '@vinyl-store/shared';
+import { useModalStore } from '@vinyl-store/shared';
 import { player, usePlayer } from '../stores/player';
 import CommentSection from '../components/comment/CommentSection.vue';
 
 const route = useRoute();
-const router = useRouter();
 const albumStore = useAlbumStore();
 const cart = useCartStore();
-const auth = useAuthStore();
-const modal = useModalStore();
 const { play } = usePlayer();
 const album = ref(null);
 const loading = ref(false);
@@ -181,16 +178,6 @@ function onPlay(track) {
 }
 
 async function handleBuy() {
-  if (!auth.isLoggedIn) {
-    const ok = await modal.open({
-      message: '您还未登录，请先登录',
-      confirmText: '去登录',
-      cancelText: '取消',
-    })
-    if (ok) router.push('/login')
-    return
-  }
   cart.add(album.value)
-  cart.open()
 }
 </script>

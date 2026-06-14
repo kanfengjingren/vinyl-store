@@ -51,6 +51,7 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
@@ -58,6 +59,10 @@ import { useAuthStore } from '../stores/auth';
 const cart = useCartStore();
 const auth = useAuthStore();
 const router = useRouter();
+
+onMounted(() => {
+  cart.load();
+});
 
 function coverSrc(url) {
   if (!url) return '';
