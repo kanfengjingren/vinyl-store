@@ -1,15 +1,19 @@
 <template>
   <NavBar class="shrink-0" />
 
+
+  <!-- routerview -->
   <router-view v-slot="{ Component, route: r }" :key="route.name">
     <transition
       mode="out-in"
       enter-active-class="animate__animated animate__fadeIn animate__faster"
       leave-active-class="animate__animated animate__fadeOut animate__faster"
     >
+
       <keep-alive include="HomePage">
         <component :is="Component" :key="r.name" />
       </keep-alive>
+
     </transition>
   </router-view>
 
