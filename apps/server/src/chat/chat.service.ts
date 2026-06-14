@@ -54,9 +54,19 @@ export class ChatService {
       }
     }
 
+    // 查哪些 partner 是卖家，拿厂牌名
+    const partnerIds = [...partnerMap.keys()];
+    const sellers = partnerIds.length > 0
+      ? await this.prisma.seller.findMany({
+          where: { userId: { in: partnerIds } },
+          select: { userId: true, storeName: true },
+        })
+      : [];
+    const sellerMap = new Map(sellers.map((s) => [s.userId, s.storeName]));
+
     // 为每个 partner 获取最后一条消息和未读数
     const result: Array<{
-      partner: { id: number; name: string | null; email: string };
+      partner: { id: number; name: string | null; email: string; storeName: string | null };
       lastMsg: { content: string; createdAt: Date; senderId: number } | null;
       unreadCount: number;
     }> = [];
@@ -77,7 +87,16 @@ export class ChatService {
         where: { senderId: partnerId, receiverId: userId, read: false },
       });
 
-      result.push({ partner, lastMsg, unreadCount });
+      result.push({
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          email: partner.email,
+          storeName: sellerMap.get(partner.id) || null,
+        },
+        lastMsg,
+        unreadCount,
+      });
     }
 
     // 按最后消息时间排序

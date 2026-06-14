@@ -77,9 +77,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
     console.log(`[Chat] 消息已存储: ${senderId} → ${data.receiverId}: ${hasImage ? '[图片]' : data.content?.trim().slice(0, 30)}`);
 
-    // 同时发给发送者和接收者
+    // 发给接收者
     this.server.to(`user:${data.receiverId}`).emit('newMessage', message);
-    this.server.to(`user:${senderId}`).emit('newMessage', message);
+    // 发给发送者的其他 socket（排除当前发送者，它已有 ACK 回调）
+    client.to(`user:${senderId}`).emit('newMessage', message);
 
     // 推送未读数
     this.pushUnreadCount(data.receiverId);

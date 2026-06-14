@@ -24,7 +24,7 @@
           ]"
         >
           <div class="flex items-center justify-between mb-1">
-            <span class="text-sm font-medium text-black">{{ c.partner.name || c.partner.email }}</span>
+            <span class="text-sm font-medium text-black">{{ c.partner.storeName || c.partner.name || c.partner.email }}</span>
             <span v-if="c.unreadCount > 0" class="text-[11px] bg-[rgb(196,147,51)] text-white px-1.5 py-0.5 rounded-full font-medium">{{ c.unreadCount }}</span>
           </div>
           <p class="text-xs text-black/30 truncate">{{ formatConversationPreview(c.lastMsg) }}</p>
@@ -37,7 +37,7 @@
       <template v-if="active">
         <!-- Header -->
         <div class="px-5 py-4 border-b border-black/5 shrink-0">
-          <p class="font-semibold text-black text-[15px]">{{ active.name || active.email }}</p>
+          <p class="font-semibold text-black text-[15px]">{{ active.storeName || active.name || active.email }}</p>
         </div>
 
         <!-- 消息列表 -->
@@ -247,8 +247,12 @@ onMounted(() => {
       ((msg.senderId === myUserId.value && msg.receiverId === active.value.id) ||
        (msg.senderId === active.value.id && msg.receiverId === myUserId.value))
     ) {
+      // 去重
+      if (msg.id > 0 && messages.value.some((m) => m.id === msg.id)) {
+        return;
+      }
       const dup = messages.value.findIndex((m) =>
-        m.senderId === msg.senderId && m.content === msg.content && m.id < 0,
+        m.id < 0 && m.senderId === msg.senderId && m.content === msg.content,
       );
       if (dup !== -1) {
         messages.value[dup] = msg;
