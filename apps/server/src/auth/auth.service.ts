@@ -49,6 +49,12 @@ export class AuthService {
     const passwordValid = await this.verifyPassword(dto.password, user.password);
     if (!passwordValid) throw new UnauthorizedException('邮箱或密码错误');
 
+    // 顾客端登录：拒绝非 CUSTOMER 角色
+    if (dto.portal === 'customer' && user.role !== 'CUSTOMER') {
+      const msg = user.role === 'SELLER' ? '商家请从商家端登录' : '管理员请从管理端登录';
+      throw new UnauthorizedException(msg);
+    }
+
     // 老用户明文密码自动升级为 bcrypt
     if (!user.password.startsWith('$2')) {
       const hashed = await bcrypt.hash(dto.password, 10);
