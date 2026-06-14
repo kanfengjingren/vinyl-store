@@ -11,3 +11,5 @@ export * from './artists';
 export * from './sellers';
 export * from './chat';
 export * from './comments';
+export * from './favorites';
+export * from './play-history';

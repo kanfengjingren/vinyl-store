@@ -42,7 +42,10 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { player } from '../../stores/player'
+import { recordPlay } from '@vinyl-store/shared'
+import { useAuthStore } from '../../stores/auth'
 
+const auth = useAuthStore()
 const audioEl = ref(null)
 const playing = ref(false)
 const currentSeconds = ref(0)
@@ -59,6 +62,11 @@ watch(() => player.src, (newSrc) => {
     audioEl.value?.load()
     audioEl.value?.play().catch(() => {})
   }, 50)
+
+  // 记录播放历史
+  if (auth.isLoggedIn && player.track) {
+    recordPlay(player.track.id, player.track.albumId).catch(() => {})
+  }
 })
 
 function toggle() {

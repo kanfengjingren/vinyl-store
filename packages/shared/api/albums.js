@@ -4,6 +4,11 @@ export function fetchAlbums(params = {}) {
   return api.get('/albums', { params }).then((r) => r.data);
 }
 
+/** 热销专辑：近30天销量排行 */
+export function fetchHotAlbums(limit = 12) {
+  return api.get('/albums/hot', { params: { limit } }).then((r) => r.data);
+}
+
 /** 卖家查看自己的专辑（含已下架） */
 export function fetchMyAlbums(params = {}) {
   return api.get('/albums/mine', { params }).then((r) => r.data);

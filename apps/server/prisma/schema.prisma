@@ -30,6 +30,8 @@ model User {
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
   comments         Comment[]
+  favorites        Favorite[]
+  playHistory      PlayHistory[]
 
   @@map("users")
 }
@@ -117,6 +119,8 @@ model Album {
   cartItems    CartItem[]
   orderItems   OrderItem[]
   comments     Comment[]
+  favorites    Favorite[]
+  playHistory  PlayHistory[]
 
   @@map("albums")
 }
@@ -139,6 +143,7 @@ model Track {
   audioUrl  String?
 
   album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  playHistory PlayHistory[]
 
   @@map("tracks")
 }
@@ -286,4 +291,38 @@ model Comment {
   @@index([albumId])
   @@index([parentId])
   @@map("comments")
+}
+
+// ════════════════════════════════════════
+// FAVORITE (收藏)
+// ════════════════════════════════════════
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  albumId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@map("favorites")
+}
+
+// ════════════════════════════════════════
+// PLAY HISTORY (播放历史)
+// ════════════════════════════════════════
+model PlayHistory {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  trackId  Int
+  albumId  Int
+  playedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt])
+  @@map("play_history")
 }

@@ -15,6 +15,8 @@ import { ArtistsModule } from './artists/artists.module';
 import { SellersModule } from './sellers/sellers.module';
 import { ChatModule } from './chat/chat.module';
 import { CommentsModule } from './comments/comments.module';
+import { FavoritesModule } from './favorites/favorites.module';
+import { PlayHistoryModule } from './play-history/play-history.module';
 
 @Module({
   imports: [
@@ -39,6 +41,8 @@ import { CommentsModule } from './comments/comments.module';
     SellersModule,
     ChatModule,
     CommentsModule,
+    FavoritesModule,
+    PlayHistoryModule,
   ],
 })
 export class AppModule { }

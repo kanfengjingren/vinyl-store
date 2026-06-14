@@ -26,4 +26,46 @@ export class UsersService {
     });
     return { balance: user.balance };
   }
+
+  /** 获取用户已购买的专辑（PAID/DELIVERED 订单中的去重专辑 + 曲目列表） */
+  async findPurchases(userId: number) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        userId,
+        status: { in: ['PAID', 'DELIVERED'] },
+      },
+      include: {
+        items: {
+          where: { status: { in: ['ACTIVE', 'SHIPPED'] } },
+          include: {
+            album: {
+              include: {
+                artistRel: { select: { id: true, name: true, slug: true } },
+                seller: { select: { id: true, storeName: true } },
+                tracks: { orderBy: { position: 'asc' } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // 去重：同一张专辑买了多次只保留一份
+    const seen = new Map<number, any>();
+    for (const order of orders) {
+      for (const item of order.items) {
+        if (!item.album || item.album.status === 'DELISTED') continue;
+        if (!seen.has(item.album.id)) {
+          const { tracks, artistRel, ...album } = item.album;
+          seen.set(item.album.id, {
+            ...album,
+            artistInfo: artistRel,
+            tracks,
+          });
+        }
+      }
+    }
+
+    return [...seen.values()];
+  }
 }
