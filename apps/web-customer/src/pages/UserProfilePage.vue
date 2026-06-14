@@ -178,7 +178,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchProfile, updateProfile, recharge, changePassword, fetchPurchases, fetchFavorites, fetchPlayHistory } from '@vinyl-store/shared'
 import { useCartStore } from '../stores/cart'
@@ -345,6 +345,5 @@ onMounted(async () => {
 })
 
 // Watch tab changes
-import { watch } from 'vue'
 watch(activeTab, loadTabData)
 </script>
