@@ -38,16 +38,6 @@ export class CartService {
     if (!album) throw new NotFoundException('专辑不存在');
     if (album.stock < dto.quantity) throw new BadRequestException('库存不足');
 
-    // 检查是否已购买且已发货
-    const owned = await this.prisma.orderItem.findFirst({
-      where: {
-        albumId: dto.albumId,
-        status: { in: ['ACTIVE', 'SHIPPED'] },
-        order: { userId, status: { in: ['PAID', 'DELIVERED'] } },
-      },
-    });
-    if (owned) throw new BadRequestException('该专辑已购买且已发货，不可重复购买');
-
     const cart = await this.ensureCart(userId);
 
     const existing = await this.prisma.cartItem.findFirst({

@@ -32,13 +32,7 @@
       <p class="text-[13px] text-apple-tertiary mb-3">{{ album.year }} &middot; {{ album.country }}</p>
       <div class="flex items-center justify-between">
         <span class="text-lg font-semibold tracking-[-0.02em]">&yen;{{ album.price }}</span>
-        <button
-          v-if="purchased"
-          disabled
-          class="text-xs font-semibold text-gray-300 px-3.5 py-1.5 rounded-full bg-gray-50 border-none cursor-default">
-          已购买
-        </button>
-        <button v-else @click.stop="handleBuy" class="text-xs font-semibold text-apple-accent no-underline px-3.5 py-1.5 rounded-full bg-apple-accent/10 hover:bg-apple-accent/20 transition-colors border-none cursor-pointer">
+        <button @click.stop="handleBuy" class="text-xs font-semibold text-apple-accent no-underline px-3.5 py-1.5 rounded-full bg-apple-accent/10 hover:bg-apple-accent/20 transition-colors border-none cursor-pointer">
           购买
         </button>
       </div>
@@ -47,23 +41,16 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
 import { useAuthStore } from '../../stores/auth'
 import { useModalStore } from '@vinyl-store/shared'
-import { usePurchased } from '../../composables/usePurchased'
 
 const props = defineProps({ album: Object })
 const cart = useCartStore()
 const auth = useAuthStore()
 const modal = useModalStore()
 const router = useRouter()
-const { isPurchased, load } = usePurchased()
-
-const purchased = computed(() => isPurchased(props.album.id))
-
-onMounted(() => { load() })
 
 function coverSrc(url) {
   if (!url) return ''

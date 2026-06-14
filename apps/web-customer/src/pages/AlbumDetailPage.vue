@@ -61,13 +61,7 @@
           <p class="text-[32px] font-semibold tracking-[-0.02em] mb-6">&yen;{{ album.price }}</p>
           <p class="text-[13px] text-white/40 mb-4">库存: {{ album.stock }} 张</p>
           <div class="flex items-center gap-4">
-            <button
-              v-if="purchased"
-              disabled
-              class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-[15px] font-semibold border-none cursor-not-allowed bg-white/10 text-white/30 transition-all">
-              已购买
-            </button>
-            <button v-else @click="handleBuy" :disabled="album.stock <= 0"
+            <button @click="handleBuy" :disabled="album.stock <= 0"
               class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-[15px] font-semibold border-none cursor-pointer transition-all"
               :class="album.stock <= 0
                 ? 'bg-white/10 text-white/30 cursor-not-allowed'
@@ -129,7 +123,6 @@ import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { useModalStore, toggleFavorite, fetchFavorites } from '@vinyl-store/shared';
 import { player, usePlayer } from '../stores/player';
-import { usePurchased } from '../composables/usePurchased';
 import CommentSection from '../components/comment/CommentSection.vue';
 
 const route = useRoute();
@@ -139,11 +132,9 @@ const cart = useCartStore();
 const auth = useAuthStore();
 const modal = useModalStore();
 const { play } = usePlayer();
-const { isPurchased, load: loadPurchased } = usePurchased();
 const album = ref(null);
 const loading = ref(false);
 const favorited = ref(false);
-const purchased = ref(false);
 
 watch(() => route.params.slug, load, { immediate: true });
 
@@ -157,9 +148,6 @@ async function load() {
         const favs = await fetchFavorites();
         favorited.value = favs.some((f) => f.album?.id === album.value.id);
       } catch {}
-      // 检查是否已购买
-      await loadPurchased();
-      purchased.value = isPurchased(album.value.id);
     }
   } finally {
     loading.value = false;

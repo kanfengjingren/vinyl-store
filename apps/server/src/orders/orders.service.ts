@@ -26,21 +26,10 @@ export class OrdersService {
     }
     
 
-    // 2. Validate stock & ownership for all items
+    // 2. Validate stock for all items
     for (const item of cart.items) {
       if (item.album.stock < item.quantity) {
         throw new BadRequestException(`"${item.album.title}" 库存不足`);
-      }
-      // 检查是否已购买且已发货
-      const owned = await this.prisma.orderItem.findFirst({
-        where: {
-          albumId: item.albumId,
-          status: { in: ['ACTIVE', 'SHIPPED'] },
-          order: { userId, status: { in: ['PAID', 'DELIVERED'] } },
-        },
-      });
-      if (owned) {
-        throw new BadRequestException(`"${item.album.title}" 已购买且已发货，不可重复购买`);
       }
     }
 
@@ -197,11 +186,7 @@ export class OrdersService {
         continue;
       }
 
-      // 库存不足
-      if (album.stock < item.quantity) {
-        invalidItems.push({ id: item.id, albumId: album.id, quantity: item.quantity, reason: `「${album.title}」库存不足` });
-        continue;
-      }
+      // 注意：库存已在 checkout 时扣减预留，此处不再重复校验
 
       // 价格检查：用当前价格重新计算
       const priceChanged = album.price !== item.unitPrice;
