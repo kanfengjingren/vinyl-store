@@ -10,3 +10,4 @@ export * from './wallet';
 export * from './artists';
 export * from './sellers';
 export * from './chat';
+export * from './comments';

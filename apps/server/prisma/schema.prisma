@@ -29,6 +29,7 @@ model User {
 
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
+  comments         Comment[]
 
   @@map("users")
 }
@@ -115,6 +116,7 @@ model Album {
   categories   AlbumCategory[]
   cartItems    CartItem[]
   orderItems   OrderItem[]
+  comments     Comment[]
 
   @@map("albums")
 }
@@ -260,4 +262,28 @@ model Message {
   @@index([senderId, receiverId])
   @@index([receiverId])
   @@map("messages")
+}
+
+// ════════════════════════════════════════
+// COMMENT (专辑评论)
+// ════════════════════════════════════════
+model Comment {
+  id              Int       @id @default(autoincrement())
+  albumId         Int
+  userId          Int
+  parentId        Int?
+  replyToUserId   Int?
+  replyToUserName String?
+  content         String    @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  album   Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([albumId])
+  @@index([parentId])
+  @@map("comments")
 }

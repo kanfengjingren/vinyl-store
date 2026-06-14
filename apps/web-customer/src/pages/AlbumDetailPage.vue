@@ -97,6 +97,11 @@
       <div class="mt-12 pt-8 border-t border-white/10">
         <router-link to="/" class="text-[15px] font-medium text-[rgb(196,147,51)] no-underline hover:underline">&larr; 返回全部收藏</router-link>
       </div>
+
+      <!-- 评论区 -->
+      <div class="mt-12 pt-8 border-t border-white/10" v-if="album.id">
+        <CommentSection :album-id="album.id" />
+      </div>
     </div>
   </div>
 </template>
@@ -109,6 +114,7 @@ import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { useModalStore } from '@vinyl-store/shared';
 import { player, usePlayer } from '../stores/player';
+import CommentSection from '../components/comment/CommentSection.vue';
 
 const route = useRoute();
 const router = useRouter();

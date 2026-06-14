@@ -27,7 +27,7 @@
             <span class="text-sm font-medium text-black">{{ c.partner.name || c.partner.email }}</span>
             <span v-if="c.unreadCount > 0" class="text-[11px] bg-[rgb(196,147,51)] text-white px-1.5 py-0.5 rounded-full font-medium">{{ c.unreadCount }}</span>
           </div>
-          <p class="text-xs text-black/30 truncate">{{ c.lastMsg?.imageUrl ? '[图片]' : (c.lastMsg?.content || '暂无消息') }}</p>
+          <p class="text-xs text-black/30 truncate">{{ formatConversationPreview(c.lastMsg) }}</p>
         </div>
       </div>
     </div>
@@ -51,7 +51,20 @@
               msg.senderId === myUserId ? 'ml-auto' : 'mr-auto',
             ]"
           >
+            <!-- 评论通知卡片 -->
             <div
+              v-if="isCommentNotification(msg)"
+              @click="goToAlbum(msg)"
+              class="bg-[rgb(196,147,51)]/5 border border-[rgb(196,147,51)]/20 rounded-xl px-4 py-3 cursor-pointer hover:bg-[rgb(196,147,51)]/10 transition-colors max-w-[320px]"
+            >
+              <p class="text-xs text-[rgb(196,147,51)] mb-1">💬 评论回复</p>
+              <p class="text-sm text-black/70 leading-relaxed">{{ getCommentNotifyText(msg) }}</p>
+              <p class="text-xs text-black/30 mt-1.5">点击查看 →</p>
+            </div>
+
+            <!-- 普通消息 -->
+            <div
+              v-else
               :class="msg.senderId === myUserId
                 ? 'bg-[rgb(196,147,51)] text-white rounded-bl-2xl'
                 : 'bg-gray-100 text-black rounded-br-2xl'"
@@ -95,8 +108,11 @@
 
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import { io } from 'socket.io-client';
 import { fetchConversations, fetchMessages, markMessagesRead, uploadChatImage } from '@vinyl-store/shared';
+
+const router = useRouter();
 
 const msgList = ref(null);
 const conversations = ref([]);
@@ -250,6 +266,40 @@ onMounted(() => {
 
   loadConversations();
 });
+
+// 会话列表预览文案
+function formatConversationPreview(lastMsg) {
+  if (!lastMsg) return '暂无消息';
+  if (lastMsg.imageUrl) return '[图片]';
+  if (isCommentNotification(lastMsg)) return '💬 ' + getCommentNotifyText(lastMsg);
+  return lastMsg.content || '';
+}
+
+// 判断是否为评论通知消息
+function isCommentNotification(msg) {
+  try {
+    const data = JSON.parse(msg.content || '{}');
+    return data.type === 'comment_reply';
+  } catch { return false; }
+}
+
+// 获取评论通知的可读文本
+function getCommentNotifyText(msg) {
+  try {
+    const data = JSON.parse(msg.content || '{}');
+    return `在《${data.albumTitle}》中回复了你`;
+  } catch { return msg.content; }
+}
+
+// 点击跳转到专辑详情页
+function goToAlbum(msg) {
+  try {
+    const data = JSON.parse(msg.content || '{}');
+    if (data.albumSlug) {
+      router.push(`/albums/${data.albumSlug}`);
+    }
+  } catch {}
+}
 
 onBeforeUnmount(() => {
   socket.value?.disconnect();

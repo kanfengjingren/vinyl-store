@@ -80,6 +80,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 同时发给发送者和接收者
     this.server.to(`user:${data.receiverId}`).emit('newMessage', message);
     this.server.to(`user:${senderId}`).emit('newMessage', message);
+
+    // 推送未读数
+    this.pushUnreadCount(data.receiverId);
+    this.pushUnreadCount(senderId);
+
     return message;
+  }
+
+  @SubscribeMessage('unreadCount')
+  async handleUnreadCount(@ConnectedSocket() client: Socket) {
+    const userId = client.data.userId;
+    if (!userId) return 0;
+    const count = await this.chatService.getUnreadCount(userId);
+    return count;
+  }
+
+  // 推送未读数给指定用户
+  async pushUnreadCount(userId: number) {
+    try {
+      const count = await this.chatService.getUnreadCount(userId);
+      this.server.to(`user:${userId}`).emit('unreadCount', count);
+    } catch {}
   }
 }

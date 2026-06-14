@@ -22,7 +22,13 @@
           <router-link v-if="!auth.isAdmin" to="/orders"
             class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">订单</router-link>
           <router-link v-if="!auth.isAdmin" to="/messages"
-            class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">消息</router-link>
+            class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors relative">
+            消息
+            <span v-if="unreadCount > 0"
+              class="absolute -top-1.5 -right-3 min-w-[16px] h-[16px] px-[4px] bg-red-500 text-white text-[10px] font-semibold leading-[16px] text-center rounded-[8px]">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+          </router-link>
           <router-link v-if="!auth.isAdmin" to="/profile" class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">{{ auth.user?.name || auth.user?.email }}</router-link>
           <button @click="handleLogout"
             class="text-[13px] text-apple-secondary hover:text-apple-text transition-colors">退出</button>
@@ -52,15 +58,56 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { io } from 'socket.io-client';
 import { useAuthStore } from '../../stores/auth';
 import { useCartStore } from '../../stores/cart';
 
 const auth = useAuthStore();
 const cart = useCartStore();
 const router = useRouter();
+const unreadCount = ref(0);
+let socket = null;
+
+function connectSocket() {
+  if (!auth.isLoggedIn || auth.isAdmin) { unreadCount.value = 0; return; }
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const serverUrl = isDev ? 'http://localhost:3000' : '';
+
+  socket = io(serverUrl + '/chat', {
+    auth: { token },
+    transports: ['websocket', 'polling'],
+  });
+
+  socket.on('unreadCount', (count) => {
+    unreadCount.value = typeof count === 'number' ? count : 0;
+  });
+
+  socket.on('connect', () => {
+    // 连接后立即获取一次未读数
+    socket.emit('unreadCount', {}, (count) => {
+      unreadCount.value = typeof count === 'number' ? count : 0;
+    });
+  });
+}
+
+function disconnectSocket() {
+  if (socket) { socket.disconnect(); socket = null; }
+}
+
+watch(() => auth.isLoggedIn, (val) => {
+  if (val) connectSocket(); else { disconnectSocket(); unreadCount.value = 0; }
+});
+
+onMounted(() => { if (auth.isLoggedIn) connectSocket(); });
+onBeforeUnmount(() => disconnectSocket());
 
 function handleLogout() {
+  disconnectSocket();
   auth.logout();
   cart.clear();
   router.push('/');
