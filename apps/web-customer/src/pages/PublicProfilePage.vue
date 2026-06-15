@@ -17,6 +17,19 @@
           <span class="inline-block mr-1">🕐</span>
           {{ formatDate(user.createdAt) }} 加入
         </p>
+
+        <!-- 好友按钮（仅普通用户，且不是自己） -->
+        <div v-if="auth.isLoggedIn && !isSelf && !isSeller" class="mt-4">
+          <button
+            v-if="friendStatus === 'none'"
+            @click="handleAddFriend"
+            :disabled="friendLoading"
+            class="inline-flex items-center gap-1.5 px-5 py-2 bg-[rgb(196,147,51)] text-white text-sm font-medium hover:bg-[rgb(176,127,31)] disabled:opacity-50 transition-colors"
+          >{{ friendLoading ? '处理中...' : '➕ 添加好友' }}</button>
+          <span v-else-if="friendStatus === 'pending_sent'" class="inline-block px-5 py-2 bg-gray-100 text-gray-400 text-sm font-medium">已发送申请</span>
+          <span v-else-if="friendStatus === 'pending_received'" class="inline-block px-5 py-2 bg-gray-100 text-gray-400 text-sm font-medium">对方已向你发送申请</span>
+          <span v-else-if="friendStatus === 'accepted'" class="inline-block px-5 py-2 bg-gray-100 text-gray-400 text-sm font-medium">✅ 已是好友</span>
+        </div>
       </div>
 
       <!-- ─── 商家：发售专辑 ─── -->
@@ -141,13 +154,43 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchPublicProfile, fetchPublicPurchases, fetchPublicFavorites, fetchPublicSellerAlbums } from '@vinyl-store/shared'
+import { fetchPublicProfile, fetchPublicPurchases, fetchPublicFavorites, fetchPublicSellerAlbums, fetchFriendshipStatus, sendFriendRequest } from '@vinyl-store/shared'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
 const user = ref(null)
 const loading = ref(false)
 
 const isSeller = computed(() => user.value?.role === 'SELLER' && user.value?.seller?.status === 'APPROVED')
+const isSelf = computed(() => auth.isLoggedIn && auth.user?.id === user.value?.id)
+
+// ── 好友状态 ──
+const friendStatus = ref('none') // none | pending_sent | pending_received | accepted | self
+const friendLoading = ref(false)
+
+async function checkFriendStatus() {
+  if (!auth.isLoggedIn || !user.value || isSelf.value || isSeller.value) return
+  try {
+    const res = await fetchFriendshipStatus(user.value.id)
+    if (res.status === 'none') friendStatus.value = 'none'
+    else if (res.status === 'pending') friendStatus.value = res.isSender ? 'pending_sent' : 'pending_received'
+    else if (res.status === 'accepted') friendStatus.value = 'accepted'
+  } catch {}
+}
+
+async function handleAddFriend() {
+  if (!user.value) return
+  friendLoading.value = true
+  try {
+    await sendFriendRequest(user.value.id)
+    friendStatus.value = 'pending_sent'
+  } catch (e) {
+    alert(e.response?.data?.message || '发送失败')
+  } finally {
+    friendLoading.value = false
+  }
+}
 
 // ── 商家 Tab ──
 const sellerAlbums = ref([])
@@ -180,15 +223,18 @@ async function load() {
   }
 }
 
-// 加载商家专辑
+// 加载商家专辑 + 检查好友状态
 watch(user, (u) => {
-  if (u && isSeller.value) {
+  if (!u) return
+  if (isSeller.value) {
     sellerAlbumsLoading.value = true
     fetchPublicSellerAlbums(u.id).then(res => {
       sellerAlbums.value = res.data || []
     }).catch(() => {}).finally(() => {
       sellerAlbumsLoading.value = false
     })
+  } else {
+    checkFriendStatus()
   }
 })
 

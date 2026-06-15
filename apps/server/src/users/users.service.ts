@@ -66,6 +66,24 @@ export class UsersService {
     return { avatar: user.avatar };
   }
 
+  /** 按名称搜索用户（仅普通用户，排除自己，用于添加好友） */
+  async searchUsers(keyword: string, excludeUserId: number) {
+    const q = keyword?.trim();
+    if (!q) return [];
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        role: 'CUSTOMER',
+        id: { not: excludeUserId },
+        name: { contains: q },
+      },
+      select: { id: true, name: true, avatar: true },
+      take: 20,
+    });
+
+    return users;
+  }
+
   async recharge(userId: number, amount: number) {
     if (!amount || amount <= 0) throw new BadRequestException('充值金额必须大于 0');
     const user = await this.prisma.user.update({

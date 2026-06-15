@@ -28,6 +28,12 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('search')
+  searchUsers(@Req() req: any) {
+    return this.usersService.searchUsers(req.query.q, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('recharge')
   recharge(@Req() req: any, @Body() body: { amount: number }) {
     return this.usersService.recharge(req.user.userId, body.amount);

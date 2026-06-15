@@ -32,6 +32,8 @@ model User {
 
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
+  sentFriendRequests     Friendship[] @relation("FriendshipSender")
+  receivedFriendRequests Friendship[] @relation("FriendshipReceiver")
   comments         Comment[]
   favorites        Favorite[]
   ratings          Rating[]
@@ -348,4 +350,28 @@ model PlayHistory {
 
   @@index([userId, playedAt])
   @@map("play_history")
+}
+
+// ════════════════════════════════════════
+// FRIENDSHIP (好友)
+// ════════════════════════════════════════
+model Friendship {
+  id         Int              @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  status     FriendshipStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  sender   User @relation("FriendshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@map("friendships")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
