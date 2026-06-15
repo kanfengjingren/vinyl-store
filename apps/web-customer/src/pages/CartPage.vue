@@ -8,24 +8,35 @@
     </div>
 
     <template v-else>
-      <div class="space-y-4">
-        <div v-for="item in cart.items" :key="item.id" class="flex gap-4 bg-white rounded-[18px] p-4 items-center">
-          <router-link :to="`/albums/${item.album.slug}`" class="shrink-0 w-[80px] h-[80px] rounded-xl overflow-hidden bg-[#e0e0e2]">
-            <img v-if="item.album.coverUrl" :src="coverSrc(item.album.coverUrl)" class="w-full h-full object-cover" />
-            <div v-else class="w-full h-full" :style="{ background: item.album.gradient }"></div>
-          </router-link>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold">{{ item.album.title }}</p>
-            <p class="text-sm text-apple-secondary">{{ item.album.artist }}</p>
-            <p class="text-sm font-medium mt-1">&yen;{{ item.album.price }}</p>
+      <div class="space-y-3">
+        <div v-for="item in cart.items" :key="item.id" class="bg-white rounded-[18px] p-4">
+          <div class="flex gap-3">
+            <!-- 封面 -->
+            <router-link :to="`/albums/${item.album.slug}`" class="shrink-0 w-[88px] h-[88px] rounded-xl overflow-hidden bg-[#e0e0e2]">
+              <img v-if="item.album.coverUrl" :src="coverSrc(item.album.coverUrl)" class="w-full h-full object-cover" />
+              <div v-else class="w-full h-full" :style="{ background: item.album.gradient || '#e0e0e2' }"></div>
+            </router-link>
+
+            <!-- 信息 -->
+            <div class="flex-1 min-w-0 flex flex-col justify-between">
+              <div>
+                <p class="font-semibold text-[15px] leading-snug line-clamp-1">{{ item.album.title }}</p>
+                <p class="text-[13px] text-apple-secondary mt-0.5">{{ item.album.artist }}</p>
+              </div>
+              <p class="text-[15px] font-semibold text-apple-accent mt-1">&yen;{{ item.album.price }}</p>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button @click="handleQty(item, item.quantity - 1)" class="w-7 h-7 rounded-full border border-apple-border flex items-center justify-center hover:bg-black/5">-</button>
-            <span class="w-8 text-center">{{ item.quantity }}</span>
-            <button @click="handleQty(item, item.quantity + 1)" class="w-7 h-7 rounded-full border border-apple-border flex items-center justify-center hover:bg-black/5">+</button>
+
+          <!-- 底部操作栏 -->
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-apple-border">
+            <button @click="cart.remove(item.id)" class="text-[20px] text-apple-tertiary hover:text-red-500 transition-colors leading-none px-1">&times;</button>
+            <div class="flex items-center gap-1.5">
+              <button @click="handleQty(item, item.quantity - 1)" class="w-[30px] h-[30px] rounded-full border border-apple-border flex items-center justify-center text-[16px] hover:bg-black/5 transition-colors">-</button>
+              <span class="w-9 text-center text-[15px] font-medium">{{ item.quantity }}</span>
+              <button @click="handleQty(item, item.quantity + 1)" class="w-[30px] h-[30px] rounded-full border border-apple-border flex items-center justify-center text-[16px] hover:bg-black/5 transition-colors">+</button>
+            </div>
+            <span class="text-[17px] font-semibold">&yen;{{ item.album.price * item.quantity }}</span>
           </div>
-          <span class="w-24 text-right font-semibold">&yen;{{ item.album.price * item.quantity }}</span>
-          <button @click="cart.remove(item.id)" class="text-apple-tertiary hover:text-red-500 transition-colors">&times;</button>
         </div>
       </div>
 

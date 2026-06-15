@@ -32,4 +32,18 @@ interface ApiService {
 
     @GET("auth/profile")
     suspend fun getProfile(): User
+
+    // ── Favorites ──────────────────────────────────────
+    @POST("favorites")
+    suspend fun toggleFavorite(@Body request: ToggleFavoriteRequest): ToggleFavoriteResponse
+
+    @GET("favorites")
+    suspend fun getFavorites(): List<FavoriteItem>
 }
+
+data class ToggleFavoriteRequest(val albumId: Int)
+data class ToggleFavoriteResponse(val favorited: Boolean)
+data class FavoriteItem(
+    val id: Int,
+    val album: Album
+)

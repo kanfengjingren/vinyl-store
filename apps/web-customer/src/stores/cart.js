@@ -3,6 +3,8 @@ import { ref, computed } from 'vue';
 import { fetchCart, addToCart, updateCartItem, removeCartItem } from '@vinyl-store/shared';
 import { useAuthStore } from './auth';
 
+const isAndroidWebView = typeof navigator !== 'undefined' && /VinylStoreAndroid/.test(navigator.userAgent || '');
+
 export const useCartStore = defineStore('cart', () => {
   const items = ref([]);
   const total = ref(0);
@@ -46,6 +48,12 @@ export const useCartStore = defineStore('cart', () => {
     );
   }
 
+  function goToCart() {
+    if (isAndroidWebView && window.AndroidBridge?.navigateTo) {
+      window.AndroidBridge.navigateTo('go_cart', '{}');
+    }
+  }
+
   async function add(album) {
     const auth = useAuthStore();
     if (!auth.isLoggedIn) {
@@ -56,11 +64,13 @@ export const useCartStore = defineStore('cart', () => {
       saveLocal(local);
       items.value = local;
       calcTotal();
+      goToCart();
       return;
     }
     const data = await addToCart(album.id, 1);
     items.value = data.items;
     total.value = data.total;
+    goToCart();
   }
 
   async function update(itemId, quantity) {

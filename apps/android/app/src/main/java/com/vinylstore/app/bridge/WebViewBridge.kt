@@ -43,6 +43,14 @@ class WebViewBridge(
      * 前端通知原生层清除 token（退出登录）。
      */
     @JavascriptInterface
+    fun setUser(userJson: String) {
+        Log.d(TAG, "setUser: length=${userJson.length}")
+        CoroutineScope(Dispatchers.IO).launch {
+            tokenStorage.saveUserJson(userJson)
+        }
+    }
+
+    @JavascriptInterface
     fun clearToken() {
         Log.d(TAG, "clearToken")
         CoroutineScope(Dispatchers.IO).launch {
@@ -58,6 +66,15 @@ class WebViewBridge(
     fun openNativeAlbum(albumSlug: String) {
         Log.d(TAG, "openNativeAlbum: $albumSlug")
         onNavigateNative("album_detail", mapOf("slug" to albumSlug))
+    }
+
+    /**
+     * 前端请求跳转到原生首页（Tab 0）
+     */
+    @JavascriptInterface
+    fun goToHome() {
+        Log.d(TAG, "goToHome")
+        onNavigateNative("go_home", emptyMap())
     }
 
     /**

@@ -1,18 +1,27 @@
 package com.vinylstore.app.ui.navigation
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.view.ViewGroup
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -29,6 +38,7 @@ import com.vinylstore.app.local.TokenStorage
 import com.vinylstore.app.ui.native.album.AlbumDetailScreen
 import com.vinylstore.app.ui.native.home.HomeScreen
 import com.vinylstore.app.ui.native.home.HomeViewModel
+import kotlinx.coroutines.channels.Channel
 
 /**
  * Web 页面路由 → Vue Router path 映射
@@ -47,19 +57,38 @@ fun AppNavigation(
     val context = LocalContext.current
     val navController = rememberNavController()
 
+    // Tab 切换控制（WebView 内部可通过 bridge 切到首页）
+    var homeTabIndex by remember { mutableIntStateOf(0) }
+
+    // Channel 用于将 Bridge 回调（非 UI 线程）抛到 Compose 主线程执行
+    val navChannel = remember { Channel<Pair<String, Map<String, String>>>(Channel.UNLIMITED) }
+
     val bridge = remember {
         WebViewBridge(
             tokenStorage = tokenStorage,
             onNavigateNative = { path, params ->
-                when (path) {
-                    "album_detail" -> {
-                        params["slug"]?.let { slug ->
-                            navController.navigate("album_detail/$slug")
-                        }
-                    }
-                }
+                navChannel.trySend(path to params)
             }
         )
+    }
+
+    // 在主线程消费 bridge 导航事件
+    LaunchedEffect(Unit) {
+        for ((path, params) in navChannel) {
+            when (path) {
+                "album_detail" -> {
+                    params["slug"]?.let { slug ->
+                        navController.navigate("album_detail/$slug")
+                    }
+                }
+                "go_home" -> {
+                    homeTabIndex = 0
+                }
+                "go_cart" -> {
+                    homeTabIndex = 2
+                }
+            }
+        }
     }
 
     // 共享 WebView（在 AppNavigation 层级创建，所有子页面可引用）
@@ -76,7 +105,9 @@ fun AppNavigation(
                 navController = navController,
                 webView = sharedWebView,
                 tokenStorage = tokenStorage,
-                albumRepository = albumRepository
+                albumRepository = albumRepository,
+                externalTabIndex = homeTabIndex,
+                onExternalTabConsumed = { homeTabIndex = -1 }
             )
         }
 
@@ -176,18 +207,23 @@ private fun injectPlayTrack(webView: WebView, trackJson: String, artistName: Str
  * 将 token 注入 WebView 的 localStorage
  */
 private fun injectAuthToken(view: WebView?, tokenStorage: TokenStorage) {
-    val token = tokenStorage.getTokenSync()
-    if (token.isNotBlank()) {
-        val escaped = token.replace("'", "\\'")
-        view?.evaluateJavascript(
-            """
-            (function(){
-                var t = localStorage.getItem('token');
-                if (t !== '$escaped') { localStorage.setItem('token', '$escaped'); }
-            })();
-            """.trimIndent(), null
-        )
-    }
+    val nativeToken = tokenStorage.getTokenSync()
+    view?.evaluateJavascript(
+        """
+        (function(){
+            var t = localStorage.getItem('token');
+            var nativeToken = '${nativeToken.replace("'", "\\'")}';
+            // If native has a token that WebView doesn't, inject it
+            if (nativeToken && t !== nativeToken) {
+                localStorage.setItem('token', nativeToken);
+            }
+            // If WebView has a token, sync it back to native
+            if (t && typeof AndroidBridge !== 'undefined' && AndroidBridge.setToken) {
+                AndroidBridge.setToken(t);
+            }
+        })();
+        """.trimIndent(), null
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -197,25 +233,103 @@ private fun MainTabScreen(
     navController: androidx.navigation.NavController,
     webView: WebView,
     tokenStorage: TokenStorage,
-    albumRepository: AlbumRepository
+    albumRepository: AlbumRepository,
+    externalTabIndex: Int = -1,
+    onExternalTabConsumed: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var currentTitle by remember { mutableStateOf("幻觉贸易") }
+    var currentPath by remember { mutableStateOf("") }
+    val tabPaths = setOf("/catalog", "/cart", "/profile")
+
+    // 响应外部（WebViewBridge）请求的 Tab 切换
+    LaunchedEffect(externalTabIndex) {
+        if (externalTabIndex >= 0) {
+            selectedTab = externalTabIndex
+            onExternalTabConsumed()
+        }
+    }
     val tabs = Screen.bottomTabs
 
-    // 设置标题监听（webView 实例由外层创建）
+    // 设置标题监听 + 文件选择器
+    val fileChooserCallback = remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val callback = fileChooserCallback.value ?: return@rememberLauncherForActivityResult
+        fileChooserCallback.value = null
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val data = result.data!!
+            val uris = when {
+                data.clipData != null -> {
+                    val cd = data.clipData!!
+                    Array(cd.itemCount) { cd.getItemAt(it).uri }
+                }
+                data.data != null -> arrayOf(data.data!!)
+                else -> null
+            }
+            callback.onReceiveValue(uris)
+        } else {
+            callback.onReceiveValue(null)
+        }
+    }
+
+    // 通过 JS 查询 WebView 当前路径
+    fun trackPath() {
+        webView.evaluateJavascript("window.location.pathname") { result ->
+            if (result != null) {
+                val path = result.trim().removeSurrounding("\"")
+                if (path.isNotEmpty()) currentPath = path
+            }
+        }
+    }
+
+    // 设置 WebChromeClient + WebViewClient
     LaunchedEffect(webView) {
         webView.webChromeClient = object : WebChromeClient() {
             override fun onReceivedTitle(view: WebView?, title: String?) {
                 currentTitle = title ?: ""
             }
+
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                fileChooserCallback.value?.onReceiveValue(null)
+                fileChooserCallback.value = filePathCallback
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
+                }
+                try {
+                    filePickerLauncher.launch(intent)
+                } catch (e: Exception) {
+                    fileChooserCallback.value = null
+                    filePathCallback?.onReceiveValue(null)
+                    return false
+                }
+                return true
+            }
+        }
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                injectAuthToken(view, tokenStorage)
+                trackPath()
+            }
+            override fun shouldOverrideUrlLoading(
+                view: WebView?, request: WebResourceRequest?
+            ): Boolean = false
         }
     }
 
-    // 当 Tab 切换时，用 Vue Router history API 导航（不刷新整个 WebView）
+    // 当 Tab 切换时，用 Vue Router history API 导航并追踪路径
     LaunchedEffect(selectedTab) {
         if (selectedTab in tabRoutes) {
             val path = tabRoutes[selectedTab]!!
+            currentPath = path
             webView.evaluateJavascript(
                 """
                 (function() {
@@ -231,8 +345,25 @@ private fun MainTabScreen(
 
     Scaffold(
         topBar = {
+            val showBack = selectedTab != 0 && currentPath.isNotEmpty() && currentPath !in tabPaths
             CenterAlignedTopAppBar(
-                title = { Text(currentTitle) },
+                title = { Text(currentTitle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    if (showBack) {
+                        IconButton(onClick = {
+                            trackPath()
+                            webView.evaluateJavascript("window.history.back()", null)
+                            // 延迟更新路径
+                            webView.postDelayed({ trackPath() }, 300)
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "返回",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )

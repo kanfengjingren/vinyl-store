@@ -1,6 +1,7 @@
 package com.vinylstore.app.data.repository
 
 import com.vinylstore.app.data.api.ApiClient
+import com.vinylstore.app.data.api.ToggleFavoriteRequest
 import com.vinylstore.app.data.model.Album
 import com.vinylstore.app.data.model.Category
 import com.vinylstore.app.local.TokenStorage
@@ -39,5 +40,15 @@ class AlbumRepository(private val tokenStorage: TokenStorage) {
     suspend fun getFeatured(): Album? {
         val albums = getAlbums(page = 1, limit = 1, sort = "createdAt", order = "desc")
         return albums.firstOrNull()
+    }
+
+    suspend fun toggleFavorite(albumId: Int): Boolean {
+        val response = api.toggleFavorite(ToggleFavoriteRequest(albumId))
+        return response.favorited
+    }
+
+    suspend fun isFavorited(albumId: Int): Boolean {
+        val favorites = api.getFavorites()
+        return favorites.any { it.album.id == albumId }
     }
 }

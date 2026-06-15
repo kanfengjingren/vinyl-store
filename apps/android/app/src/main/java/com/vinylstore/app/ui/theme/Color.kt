@@ -28,4 +28,5 @@ val TextOnDark = Color(0xFFF5F5F0)
 val TextOnDarkSecondary = Color(0xFFB0B0B0)
 
 // 特别颜色
+val Red = Color(0xFFEF4444)
 val GoldText = Color(0xFFC49333)

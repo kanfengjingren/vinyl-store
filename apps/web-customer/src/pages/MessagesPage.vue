@@ -7,9 +7,9 @@
   </Teleport>
 
   <div class="fixed top-[52px] left-0 right-0 flex z-[1]" :class="player.track ? 'bottom-16' : 'bottom-0'">
-    <!-- 左侧会话列表 -->
-    <div class="w-[300px] shrink-0 border-r border-black/5 bg-white/50 flex flex-col">
-      <div class="px-5 py-4 text-sm font-semibold text-black border-b border-black/5">消息</div>
+    <!-- 左侧会话列表 (桌面端常显，移动端仅在未选会话时显示) -->
+    <div :class="['shrink-0 border-r border-black/5 bg-white/50 flex flex-col', 'w-full md:w-[300px]', active ? 'hidden md:flex' : 'flex']">
+      <div class="px-5 py-4 text-sm font-semibold text-black border-b border-black/5 shrink-0">消息</div>
       <div class="flex-1 overflow-y-auto">
         <div v-if="conversations.length === 0" class="px-5 py-8 text-center text-black/20 text-sm">
           暂无消息
@@ -39,11 +39,12 @@
       </div>
     </div>
 
-    <!-- 右侧聊天区 -->
-    <div class="flex-1 flex flex-col bg-white">
+    <!-- 右侧聊天区 (移动端仅在选中会话时显示) -->
+    <div :class="['flex-1 flex flex-col bg-white', !active ? 'hidden md:flex' : 'flex']">
       <template v-if="active">
         <!-- Header -->
-        <div class="px-5 py-4 border-b border-black/5 shrink-0">
+        <div class="px-4 py-3 border-b border-black/5 shrink-0 flex items-center gap-3">
+          <button @click="backToList" class="md:hidden text-[18px] leading-none text-black/50 hover:text-black transition-colors px-1">&larr;</button>
           <p class="font-semibold text-black text-[15px]">{{ active.storeName || active.name || active.email }}</p>
         </div>
 
@@ -151,9 +152,21 @@ try {
 async function loadConversations() {
   try {
     conversations.value = await fetchConversations();
+    updateNavBarUnread();
   } catch (e) {
     console.error('加载会话列表失败:', e);
   }
+}
+
+function backToList() {
+  active.value = null;
+  activeId.value = null;
+  messages.value = [];
+}
+
+function updateNavBarUnread() {
+  const total = conversations.value.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+  window.dispatchEvent(new CustomEvent('vinyl:unread-changed', { detail: total }));
 }
 
 async function select(partner) {
@@ -162,11 +175,19 @@ async function select(partner) {
   messages.value = [];
   loading.value = true;
 
+  // 乐观更新：立即清除对应会话的未读红点
+  const conv = conversations.value.find(c => c.partner.id === partner.id);
+  if (conv && conv.unreadCount > 0) {
+    conv.unreadCount = 0;
+    updateNavBarUnread();
+  }
+
   try {
     const history = await fetchMessages(partner.id);
     messages.value = history || [];
     await markMessagesRead(partner.id);
-    loadConversations();
+    await loadConversations();
+    updateNavBarUnread();
     scrollBottom();
   } catch {
     messages.value = [];
@@ -232,8 +253,9 @@ onMounted(() => {
   const token = localStorage.getItem('token');
   if (!token) return;
 
-  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const serverUrl = isDev ? 'http://localhost:3000' : '';
+  const hostname = window.location.hostname;
+  const isDev = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '10.0.2.2';
+  const serverUrl = isDev ? `http://${hostname}:3000` : '';
 
   socket.value = io(serverUrl + '/chat', {
     auth: { token },

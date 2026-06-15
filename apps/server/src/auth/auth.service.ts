@@ -106,7 +106,7 @@ export class AuthService {
       where: { id: userId },
       data: { defaultAddress: dto.defaultAddress },
     });
-    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance };
+    return { id: user.id, email: user.email, name: user.name, role: user.role, defaultAddress: user.defaultAddress, balance: user.balance, avatar: user.avatar };
   }
 
   async forgotPassword(email: string) {

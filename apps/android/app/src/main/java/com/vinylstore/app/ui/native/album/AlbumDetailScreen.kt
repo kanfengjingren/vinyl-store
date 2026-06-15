@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -54,8 +56,12 @@ fun AlbumDetailScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("← 返回", color = Gold)
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回",
+                            tint = Gold
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -101,6 +107,9 @@ fun AlbumDetailScreen(
             uiState.album != null -> {
                 AlbumContent(
                     album = uiState.album!!,
+                    isFavorited = uiState.isFavorited,
+                    isTogglingFav = uiState.isTogglingFav,
+                    onToggleFavorite = { viewModel.toggleFavorite() },
                     onAddToCart = onAddToCart,
                     onPlayTrack = onPlayTrack,
                     modifier = Modifier.padding(padding)
@@ -113,6 +122,9 @@ fun AlbumDetailScreen(
 @Composable
 private fun AlbumContent(
     album: com.vinylstore.app.data.model.Album,
+    isFavorited: Boolean = false,
+    isTogglingFav: Boolean = false,
+    onToggleFavorite: () -> Unit = {},
     onAddToCart: (albumJson: String) -> Unit = {},
     onPlayTrack: (trackJson: String, artistName: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
@@ -263,30 +275,57 @@ private fun AlbumContent(
 
             Spacer(Modifier.height(12.dp))
 
-            // 购买按钮
+            // 收藏 + 购买按钮
             val soldOut = album.stock <= 0
             val gson = remember { com.google.gson.Gson() }
-            Button(
-                onClick = {
-                    val json = gson.toJson(album)
-                    onAddToCart(json)
-                },
-                enabled = !soldOut,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Gold,
-                    contentColor = White,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    disabledContentColor = TextTertiary
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(25.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = if (soldOut) "已售罄" else "加入购物车",
-                    style = MaterialTheme.typography.titleMedium
-                )
+                // 收藏按钮
+                OutlinedButton(
+                    onClick = onToggleFavorite,
+                    enabled = !isTogglingFav,
+                    modifier = Modifier.size(50.dp),
+                    shape = RoundedCornerShape(25.dp),
+                    contentPadding = PaddingValues(0.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (isFavorited) Red else TextSecondary
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = if (isFavorited) androidx.compose.ui.graphics.SolidColor(Red) else androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.outline)
+                    )
+                ) {
+                    Text(
+                        text = if (isFavorited) "♥" else "♡",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                }
+
+                // 加入购物车
+                Button(
+                    onClick = {
+                        val json = gson.toJson(album)
+                        onAddToCart(json)
+                    },
+                    enabled = !soldOut,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Gold,
+                        contentColor = White,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        disabledContentColor = TextTertiary
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(25.dp)
+                ) {
+                    Text(
+                        text = if (soldOut) "已售罄" else "加入购物车",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
             }
 
             // ── 曲目列表 ──────────────────────────────

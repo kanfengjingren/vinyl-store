@@ -9,11 +9,11 @@
           <li><router-link to="/catalog?category=symphonic"
               class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">全部唱片</router-link>
           </li>
-          <li><a href="#"
-              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">新品上架</a>
+          <li><router-link to="/catalog?sort=createdAt&order=desc"
+              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">新品上架</router-link>
           </li>
-          <li><a href="#"
-              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">关于我们</a>
+          <li><router-link to="/about"
+              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">关于我们</router-link>
           </li>
         </ul>
       </div>
@@ -81,8 +81,9 @@ function connectSocket() {
   const token = localStorage.getItem('token');
   if (!token) return;
 
-  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const serverUrl = isDev ? 'http://localhost:3000' : '';
+  const hostname = window.location.hostname;
+  const isDev = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '10.0.2.2';
+  const serverUrl = isDev ? `http://${hostname}:3000` : '';
 
   socket = io(serverUrl + '/chat', {
     auth: { token },
@@ -101,6 +102,10 @@ function connectSocket() {
   });
 }
 
+function handleUnreadChanged(e) {
+  unreadCount.value = e.detail;
+}
+
 function disconnectSocket() {
   if (socket) { socket.disconnect(); socket = null; }
 }
@@ -109,8 +114,14 @@ watch(() => auth.isLoggedIn, (val) => {
   if (val) connectSocket(); else { disconnectSocket(); unreadCount.value = 0; }
 });
 
-onMounted(() => { if (auth.isLoggedIn) connectSocket(); });
-onBeforeUnmount(() => disconnectSocket());
+onMounted(() => {
+  if (auth.isLoggedIn) connectSocket();
+  window.addEventListener('vinyl:unread-changed', handleUnreadChanged);
+});
+onBeforeUnmount(() => {
+  disconnectSocket();
+  window.removeEventListener('vinyl:unread-changed', handleUnreadChanged);
+});
 
 function coverSrc(url) {
   if (!url) return ''

@@ -13,7 +13,9 @@ import kotlinx.coroutines.launch
 data class AlbumDetailUiState(
     val album: Album? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isFavorited: Boolean = false,
+    val isTogglingFav: Boolean = false
 )
 
 class AlbumDetailViewModel(
@@ -33,11 +35,29 @@ class AlbumDetailViewModel(
             _uiState.value = AlbumDetailUiState(isLoading = true)
             try {
                 val album = albumRepository.getAlbumBySlug(slug)
-                _uiState.value = AlbumDetailUiState(album = album)
+                // 并行检查收藏状态
+                val favorited = try {
+                    albumRepository.isFavorited(album.id)
+                } catch (_: Exception) { false }
+                _uiState.value = AlbumDetailUiState(album = album, isFavorited = favorited)
             } catch (e: Exception) {
                 _uiState.value = AlbumDetailUiState(
                     error = e.message ?: "加载失败"
                 )
+            }
+        }
+    }
+
+    fun toggleFavorite() {
+        val state = _uiState.value
+        val albumId = state.album?.id ?: return
+        viewModelScope.launch {
+            _uiState.value = state.copy(isTogglingFav = true)
+            try {
+                val favorited = albumRepository.toggleFavorite(albumId)
+                _uiState.value = _uiState.value.copy(isFavorited = favorited, isTogglingFav = false)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isTogglingFav = false)
             }
         }
     }

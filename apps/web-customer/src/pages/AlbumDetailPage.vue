@@ -116,18 +116,20 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch , computed} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAlbumStore } from '../stores/albums';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { useModalStore } from '@vinyl-store/shared';
+import { fetchFavorites, toggleFavorite } from '@vinyl-store/shared';
 import { player, usePlayer } from '../stores/player';
 import CommentSection from '../components/comment/CommentSection.vue';
 
 const route = useRoute();
 const albumStore = useAlbumStore();
 const cart = useCartStore();
+const auth = useAuthStore();
 const { play } = usePlayer();
 const album = ref(null);
 const loading = ref(false);

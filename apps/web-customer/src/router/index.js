@@ -131,9 +131,27 @@ const router = createRouter({
 
 
 
+// 检测是否在 Android WebView 中
+const isAndroidWebView = typeof navigator !== 'undefined' && /VinylStoreAndroid/.test(navigator.userAgent || '');
+
 //全局守卫
 router.beforeEach((to) => {
   const auth = useAuthStore();
+
+  // 在 Android WebView 中，专辑详情跳转到原生页面
+  if (isAndroidWebView) {
+    const albumMatch = to.path.match(/^\/albums\/([^/]+)/);
+    if (albumMatch && window.AndroidBridge?.openNativeAlbum) {
+      const slug = albumMatch[1];
+      window.AndroidBridge.openNativeAlbum(slug);
+      return false;
+    }
+    // 跳转到首页时切换到原生首页 Tab
+    if (to.path === '/' && window.AndroidBridge?.goToHome) {
+      window.AndroidBridge.goToHome();
+      return false;
+    }
+  }
 
   // admin 用户只能访问 /admin 下的页面
   if (auth.isAdmin && !to.path.startsWith('/admin') && to.path !== '/login' && to.path !== '/register') {
