@@ -21,6 +21,8 @@ model User {
   balance           Int       @default(0)
   resetCode         String?
   resetCodeExpires  DateTime?
+  showPurchases     Boolean   @default(true)
+  showFavorites     Boolean   @default(true)
   createdAt         DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

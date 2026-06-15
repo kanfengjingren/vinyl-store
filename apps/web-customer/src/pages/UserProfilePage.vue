@@ -78,6 +78,52 @@
             <CitySelect v-model="address" v-model:detail="addressDetail" />
             <p v-if="addressError" class="text-red-400 text-sm mt-1.5">{{ addressError }}</p>
           </div>
+          <!-- 隐私设置 -->
+          <div class="mb-8 p-5 border border-gray-100">
+            <p class="text-sm font-medium text-black mb-4">隐私设置</p>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-[14px] text-gray-700">公开已购专辑</p>
+                  <p class="text-xs text-gray-400">允许他人在你的个人主页看到已购专辑</p>
+                </div>
+                <button
+                  @click="togglePrivacy('showPurchases')"
+                  :class="[
+                    'relative w-11 h-6 rounded-full transition-colors shrink-0',
+                    privacy.showPurchases ? 'bg-black' : 'bg-gray-200'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                      privacy.showPurchases ? 'left-[22px]' : 'left-0.5'
+                    ]"
+                  ></span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-[14px] text-gray-700">公开收藏专辑</p>
+                  <p class="text-xs text-gray-400">允许他人在你的个人主页看到收藏专辑</p>
+                </div>
+                <button
+                  @click="togglePrivacy('showFavorites')"
+                  :class="[
+                    'relative w-11 h-6 rounded-full transition-colors shrink-0',
+                    privacy.showFavorites ? 'bg-black' : 'bg-gray-200'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                      privacy.showFavorites ? 'left-[22px]' : 'left-0.5'
+                    ]"
+                  ></span>
+                </button>
+              </div>
+            </div>
+          </div>
           <button :disabled="saving"
             class="w-full py-3.5 bg-black text-white text-[15px] font-semibold border-none cursor-pointer hover:bg-black/80 transition-all disabled:opacity-50"
             @click="save">{{ saving ? '保存中...' : '保存' }}</button>
@@ -206,7 +252,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchProfile, updateProfile, recharge, changePassword, fetchPurchases, fetchFavorites, fetchPlayHistory, updateAvatar } from '@vinyl-store/shared'
+import { fetchProfile, updateProfile, recharge, changePassword, fetchPurchases, fetchFavorites, fetchPlayHistory, updateAvatar, updatePrivacy } from '@vinyl-store/shared'
 import api from '@vinyl-store/shared/api/client'
 import { useCartStore } from '../stores/cart'
 import { usePlayer } from '../stores/player'
@@ -243,6 +289,13 @@ const newPassword = ref('')
 const pwdSaving = ref(false)
 const pwdMsg = ref('')
 const pwdOk = ref(false)
+
+// Privacy
+const privacy = ref({ showPurchases: true, showFavorites: true })
+
+function togglePrivacy(key) {
+  privacy.value[key] = !privacy.value[key]
+}
 
 // Avatar
 const uploading = ref(false)
@@ -377,7 +430,8 @@ async function save() {
   saved.value = false
   try {
     const data = await updateProfile({ defaultAddress: address.value.trim() })
-    profile.value = { ...profile.value, ...data }
+    await updatePrivacy({ showPurchases: privacy.value.showPurchases, showFavorites: privacy.value.showFavorites })
+    profile.value = { ...profile.value, ...data, showPurchases: privacy.value.showPurchases, showFavorites: privacy.value.showFavorites }
     saved.value = true
   } finally { saving.value = false }
 }
@@ -406,6 +460,8 @@ onMounted(async () => {
     const data = await fetchProfile()
     profile.value = data
     address.value = data.defaultAddress || ''
+    privacy.value.showPurchases = data.showPurchases ?? true
+    privacy.value.showFavorites = data.showFavorites ?? true
   } finally { profileLoading.value = false }
 
   // Pre-load purchases to build purchasedIds set

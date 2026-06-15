@@ -48,17 +48,17 @@
         </div>
 
         <!-- 消息列表 -->
-        <div ref="msgList" class="flex-1 overflow-y-auto px-5 py-4 space-y-3 flex flex-col">
+        <div ref="msgList" class="flex-1 overflow-y-auto px-5 py-4 space-y-4 flex flex-col">
           <div v-if="loading" class="text-center text-black/20 text-sm py-8">加载中...</div>
           <div
             v-for="msg in messages"
             :key="msg.id"
             :class="[
-              'flex max-w-[75%] text-[14px] leading-relaxed',
-              msg.senderId === myUserId ? 'ml-auto' : 'mr-auto',
+              'flex items-end gap-2',
+              msg.senderId === myUserId ? 'flex-row-reverse self-end' : 'self-start',
             ]"
           >
-            <!-- 评论通知卡片 -->
+            <!-- 评论通知卡片（无头像） -->
             <div
               v-if="isCommentNotification(msg)"
               @click="goToAlbum(msg)"
@@ -69,17 +69,29 @@
               <p class="text-xs text-black/30 mt-1.5">点击查看 →</p>
             </div>
 
-            <!-- 普通消息 -->
-            <div
-              v-else
-              :class="msg.senderId === myUserId
-                ? 'bg-[rgb(196,147,51)] text-white rounded-bl-2xl'
-                : 'bg-gray-100 text-black rounded-br-2xl'"
-              class="px-1 py-1 rounded-2xl rounded-tl-md overflow-hidden"
-            >
-              <img v-if="msg.imageUrl" :src="msg.imageUrl" class="max-w-[240px] max-h-[320px] object-cover rounded-xl cursor-pointer" @click="previewImage = msg.imageUrl" />
-              <p v-if="msg.content" class="px-3 py-1.5">{{ msg.content }}</p>
-            </div>
+            <!-- 普通消息 + 头像 -->
+            <template v-else>
+              <!-- 头像 -->
+              <router-link
+                :to="`/user/${msg.senderId}`"
+                class="shrink-0 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-[11px] font-medium overflow-hidden hover:ring-2 hover:ring-[rgb(196,147,51)]/50 transition-all cursor-pointer"
+                :class="msg.senderId === myUserId ? 'self-end' : 'self-end'"
+              >
+                <img v-if="getSenderAvatar(msg)" :src="getSenderAvatar(msg)" class="w-full h-full object-cover" />
+                <span v-else>{{ getSenderName(msg).slice(0, 1).toUpperCase() }}</span>
+              </router-link>
+
+              <!-- 气泡 -->
+              <div
+                :class="msg.senderId === myUserId
+                  ? 'bg-[rgb(196,147,51)] text-white rounded-bl-2xl'
+                  : 'bg-gray-100 text-black rounded-br-2xl'"
+                class="px-1 py-1 rounded-2xl rounded-tl-md overflow-hidden max-w-[320px]"
+              >
+                <img v-if="msg.imageUrl" :src="msg.imageUrl" class="max-w-[240px] max-h-[320px] object-cover rounded-xl cursor-pointer" @click="previewImage = msg.imageUrl" />
+                <p v-if="msg.content" class="px-3 py-1.5">{{ msg.content }}</p>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -143,10 +155,24 @@ function coverSrc(url) {
 }
 
 const myUserId = ref(null);
+const myAvatar = ref('');
 try {
   const u = JSON.parse(localStorage.getItem('user') || '{}');
   myUserId.value = u.id;
+  myAvatar.value = u.avatar || '';
 } catch {}
+
+function getSenderAvatar(msg) {
+  const url = msg.senderId === myUserId.value ? myAvatar.value : (msg.sender?.avatar || '')
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : `/${url}`
+}
+
+function getSenderName(msg) {
+  if (msg.senderId === myUserId.value) return '我'
+  return msg.sender?.name || '?'
+}
 
 async function loadConversations() {
   try {
@@ -209,7 +235,7 @@ function emitMessage({ content, imageUrl }) {
     content: content || '',
     imageUrl: imageUrl || null,
     createdAt: new Date().toISOString(),
-    sender: { id: myUserId.value, name: '我' },
+    sender: { id: myUserId.value, name: '我', avatar: myAvatar.value },
   });
   scrollBottom();
 
