@@ -377,7 +377,7 @@ async function save() {
   saved.value = false
   try {
     const data = await updateProfile({ defaultAddress: address.value.trim() })
-    profile.value = data
+    profile.value = { ...profile.value, ...data }
     saved.value = true
   } finally { saving.value = false }
 }
