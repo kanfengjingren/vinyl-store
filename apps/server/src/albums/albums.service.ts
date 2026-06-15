@@ -327,4 +327,125 @@ export class AlbumsService {
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
+
+  /** 个性化推荐：基于用户的播放/收藏/评分/购买记录 */
+  async getRecommendations(userId: number, limit: number = 12) {
+    // 1. 收集用户交互过的专辑 ID
+    const [playedAlbums, favoritedAlbums, ratedAlbums, purchasedAlbums] = await Promise.all([
+      this.prisma.playHistory.findMany({
+        where: { userId },
+        select: { albumId: true },
+        distinct: ['albumId'],
+        take: 30,
+      }),
+      this.prisma.favorite.findMany({
+        where: { userId },
+        select: { albumId: true },
+      }),
+      this.prisma.rating.findMany({
+        where: { userId },
+        select: { albumId: true },
+      }),
+      this.prisma.orderItem.findMany({
+        where: { order: { userId, status: { in: ['PAID', 'DELIVERED'] } } },
+        select: { albumId: true },
+        distinct: ['albumId'],
+      }),
+    ]);
+
+    const interactedIds = [
+      ...new Set([
+        ...playedAlbums.map((p) => p.albumId),
+        ...favoritedAlbums.map((f) => f.albumId),
+        ...ratedAlbums.map((r) => r.albumId),
+        ...purchasedAlbums.filter((p) => p.albumId != null).map((p) => p.albumId!),
+      ]),
+    ];
+
+    // 2. 如果用户没有任何交互，回退到热门推荐
+    if (interactedIds.length === 0) {
+      const hot = await this.findHotAlbums(limit);
+      return { data: hot.data, reason: 'hot' };
+    }
+
+    // 3. 提取用户偏好的分类和艺人
+    const interactedAlbums = await this.prisma.album.findMany({
+      where: { id: { in: interactedIds } },
+      select: {
+        artist: true,
+        categories: { include: { category: { select: { slug: true } } } },
+      },
+    });
+
+    const categoryScores = new Map<string, number>(); // slug -> weight
+    const artistSet = new Set<string>();
+    for (const album of interactedAlbums) {
+      artistSet.add(album.artist);
+      for (const ac of album.categories) {
+        categoryScores.set(
+          ac.category.slug,
+          (categoryScores.get(ac.category.slug) || 0) + 1,
+        );
+      }
+    }
+    const topCategories = [...categoryScores.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([slug]) => slug);
+    const topArtists = [...artistSet].slice(0, 10);
+
+    // 4. 候选专辑：同分类 or 同艺人，排除已交互
+    const candidates = await this.prisma.album.findMany({
+      where: {
+        status: 'ACTIVE',
+        id: { notIn: interactedIds },
+        OR: [
+          { categories: { some: { category: { slug: { in: topCategories } } } } },
+          { artist: { in: topArtists } },
+        ],
+      },
+      include: {
+        artistRel: { select: { id: true, name: true, slug: true } },
+        categories: { include: { category: true } },
+        _count: { select: { tracks: true } },
+        ratings: { select: { score: true } },
+      },
+      take: 60,
+    });
+
+    // 5. 评分加权
+    const scored = candidates.map((album) => {
+      const albumCats = album.categories.map((ac) => ac.category.slug);
+      const catMatch = albumCats.filter((c) => topCategories.includes(c)).length;
+      const artistMatch = topArtists.includes(album.artist) ? 1 : 0;
+      const avgRating =
+        album.ratings.length > 0
+          ? album.ratings.reduce((s, r) => s + r.score, 0) / album.ratings.length
+          : 0;
+
+      const score = catMatch * 10 + artistMatch * 20 + avgRating * 2;
+
+      const { ratings, categories, _count, artistRel, ...rest } = album;
+      return {
+        ...rest,
+        artistInfo: artistRel,
+        categories: categories.map((ac) => ac.category),
+        trackCount: _count.tracks,
+        avgRating: Math.round(avgRating * 10) / 10,
+        score,
+      };
+    });
+
+    // 6. 按分数降序 + 随机微调避免每次相同
+    scored.sort((a, b) => b.score - a.score);
+    const top = scored.slice(0, limit);
+
+    // 随机打乱前6个位置让推荐看起来有新鲜感
+    for (let i = Math.min(5, top.length - 1); i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [top[i], top[j]] = [top[j], top[i]];
+    }
+
+    return { data: top, reason: 'personalized' };
+  }
 }

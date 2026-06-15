@@ -58,6 +58,48 @@
       </div>
     </section>
 
+    <!-- 猜你喜欢（登录后个性化推荐） -->
+    <section v-if="auth.isLoggedIn && recommendations.length > 0" class="pb-14">
+      <div class="max-w-[1200px] mx-auto px-6 pb-4 flex items-end justify-between">
+        <h3 class="text-xl font-semibold tracking-[-0.01em] text-black">🎯 猜你喜欢</h3>
+        <router-link to="/catalog"
+          class="text-[13px] font-medium text-gray-400 hover:text-black transition-colors no-underline">探索更多 &rarr;</router-link>
+      </div>
+      <div class="max-w-[1200px] mx-auto px-6">
+        <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide cursor-grab active:cursor-grabbing"
+          @mousedown="onDragStart"
+          @mousemove="onDragMove"
+          @mouseup="onDragEnd"
+          @mouseleave="onDragEnd"
+          @click.capture="onRowClick"
+        >
+          <div
+            v-for="album in recommendations"
+            :key="album.id"
+            class="shrink-0 w-[220px] select-none"
+          >
+            <AlbumCard :album="album" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 猜你喜欢加载中 -->
+    <section v-if="auth.isLoggedIn && recommendationsLoading" class="pb-14">
+      <div class="max-w-[1200px] mx-auto px-6 pb-4">
+        <h3 class="text-xl font-semibold tracking-[-0.01em] text-black mb-1">🎯 猜你喜欢</h3>
+      </div>
+      <div class="max-w-[1200px] mx-auto px-6">
+        <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+          <div v-for="i in 4" :key="i" class="shrink-0 w-[220px] animate-pulse">
+            <div class="aspect-square bg-gray-100 mb-3" />
+            <div class="h-3 bg-gray-100 w-3/4 mb-2" />
+            <div class="h-4 bg-gray-100 w-1/2" />
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 本月热销 -->
     <section v-if="hotAlbums.length > 0" class="pb-14">
       <div class="max-w-[1200px] mx-auto px-6 pb-4 flex items-end justify-between">
@@ -125,7 +167,7 @@
 <script setup>
 defineOptions({ name: 'HomePage' });
 import { onMounted, ref, computed } from 'vue';
-import { fetchAlbums, fetchHotAlbums } from '@vinyl-store/shared';
+import { fetchAlbums, fetchHotAlbums, fetchRecommendations } from '@vinyl-store/shared';
 import { useCategoryStore } from '../stores/categories';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
@@ -137,6 +179,8 @@ const cart = useCartStore();
 const auth = useAuthStore();
 const featured = ref(null);
 const hotAlbums = ref([]);
+const recommendations = ref([]);
+const recommendationsLoading = ref(false);
 const categoryRows = ref([]);
 
 // 鼠标拖拽横向滚动
@@ -180,6 +224,17 @@ const featuredInfo = computed(() => {
 });
 
 onMounted(async () => {
+  // 猜你喜欢（登录用户个性化推荐）
+  if (auth.isLoggedIn) {
+    recommendationsLoading.value = true;
+    try {
+      const rec = await fetchRecommendations(12);
+      recommendations.value = rec.data || [];
+    } catch {} finally {
+      recommendationsLoading.value = false;
+    }
+  }
+
   // 今日推荐
   try {
     const data = await fetchAlbums({ limit: 50 });

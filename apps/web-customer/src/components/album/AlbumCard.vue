@@ -29,7 +29,9 @@
       </span>
     </p>
       <h3 class="text-base font-semibold tracking-[-0.01em] mb-1 truncate">{{ album.title }}</h3>
-      <p class="text-[13px] text-apple-tertiary mb-3">{{ album.year }} &middot; {{ album.country }}</p>
+      <p class="text-[13px] text-apple-tertiary mb-1">{{ album.year }} &middot; {{ album.country }}</p>
+      <p v-if="album.avgRating" class="text-[12px] text-[rgb(196,147,51)] mb-2">★ {{ album.avgRating }}</p>
+      <p v-else class="mb-2" />
       <div class="flex items-center justify-between">
         <span class="text-lg font-semibold tracking-[-0.02em]">&yen;{{ album.price }}</span>
         <button @click.stop="handleBuy" class="text-xs font-semibold text-apple-accent no-underline px-3.5 py-1.5 rounded-full bg-apple-accent/10 hover:bg-apple-accent/20 transition-colors border-none cursor-pointer">
