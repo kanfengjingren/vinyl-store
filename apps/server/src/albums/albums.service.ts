@@ -11,7 +11,7 @@ export class AlbumsService {
   constructor(private prisma: PrismaService) { }
 
   async findAll(query: QueryAlbumsDto) {
-    const { category, country, search, sort, order = 'asc', page = 1, limit = 12 } = query;
+    const { category, country, search, sort, order = 'asc', page = 1, limit = 12, date } = query;
 
     const where: any = { status: 'ACTIVE' };
 
@@ -32,6 +32,13 @@ export class AlbumsService {
         { artist: { contains: search } },
         { title: { contains: search } },
       ];
+    }
+
+    if (date) {
+      const startOfDay = new Date(date);
+      const endOfDay = new Date(date);
+      endOfDay.setDate(endOfDay.getDate() + 1);
+      where.createdAt = { gte: startOfDay, lt: endOfDay };
     }
 
     const orderBy: any = {};

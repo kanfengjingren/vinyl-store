@@ -65,5 +65,13 @@ export const useSellerAuthStore = defineStore('sellerAuth', () => {
     }
   }
 
-  return { user, token, isLoggedIn, seller, storeName, sellerStatus, login, logout, checkAuth };
+  function updateProfile(profile) {
+    if (user.value) {
+      user.value = { ...user.value, ...profile };
+      localStorage.setItem('seller_user', JSON.stringify(user.value));
+      localStorage.setItem('user', JSON.stringify(user.value));
+    }
+  }
+
+  return { user, token, isLoggedIn, seller, storeName, sellerStatus, login, logout, checkAuth, updateProfile };
 });

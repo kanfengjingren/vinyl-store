@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, Min, Max, IsIn } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsIn, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryAlbumsDto {
@@ -17,6 +17,10 @@ export class QueryAlbumsDto {
   @IsOptional()
   @IsString()
   color?: string;
+
+  @IsOptional()
+  @IsDateString()
+  date?: string;
 
   @IsOptional()
   @IsIn(['year', 'price', 'title', 'createdAt'])

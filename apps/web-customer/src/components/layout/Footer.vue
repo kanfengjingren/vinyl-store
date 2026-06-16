@@ -4,8 +4,9 @@
       <div v-for="col in columns" :key="col.title">
         <h4 class="text-[13px] font-semibold tracking-[.02em] mb-3 text-apple-text">{{ col.title }}</h4>
         <ul class="list-none">
-          <li v-for="link in col.links" :key="link" class="mb-2">
-            <a href="#" class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">{{ link }}</a>
+          <li v-for="link in col.links" :key="link.label" class="mb-2">
+            <router-link v-if="link.to" :to="link.to" class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">{{ link.label }}</router-link>
+            <a v-else href="#" class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">{{ link.label }}</a>
           </li>
         </ul>
       </div>
@@ -19,8 +20,23 @@
 
 <script setup>
 const columns = [
-  { title: '浏览', links: ['全部唱片', '新品上架', '即将到货', '稀有珍藏'] },
-  { title: '服务', links: ['品质保证', '退换政策', '全球配送', '联系我们'] },
-  { title: '关于', links: ['我们的故事', '策展哲学', '门店地址', '加入我们'] },
+  { title: '浏览', links: [
+    { label: '全部唱片', to: '/catalog' },
+    { label: '新品上架', to: '/new-arrivals' },
+    { label: '即将到货' },
+    { label: '稀有珍藏' },
+  ]},
+  { title: '服务', links: [
+    { label: '品质保证' },
+    { label: '退换政策' },
+    { label: '全球配送' },
+    { label: '联系我们' },
+  ]},
+  { title: '关于', links: [
+    { label: '我们的故事' },
+    { label: '策展哲学' },
+    { label: '门店地址' },
+    { label: '加入我们' },
+  ]},
 ];
 </script>

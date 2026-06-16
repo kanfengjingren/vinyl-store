@@ -239,7 +239,7 @@ function onPlay(track) {
     player.showFullPlayer = true
     return
   }
-  play(track, album.value?.artist, album.value)
+  play(track, album.value?.artist, album.value, album.value?.tracks)
 }
 
 async function handleBuy() {

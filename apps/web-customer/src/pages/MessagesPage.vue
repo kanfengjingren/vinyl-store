@@ -12,7 +12,7 @@
       <!-- 搜索框 -->
       <div class="px-4 py-3 border-b border-black/5 relative">
         <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-black/5 focus-within:border-[rgb(196,147,51)] transition-colors">
-          <span class="text-sm text-gray-300">🔍</span>
+          <!-- <span class="text-sm text-gray-300"></span> -->
           <input
             v-model="searchQ"
             @input="onSearchInput"
@@ -47,7 +47,7 @@
 
       <!-- 好友分组 -->
       <div v-if="friends.length > 0" class="border-b border-black/5">
-        <div class="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">👥 好友 · {{ friends.length }}</div>
+        <div class="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">好友 · {{ friends.length }}</div>
         <div
           v-for="f in friends"
           :key="f.friend.id"
@@ -69,7 +69,7 @@
 
       <!-- 消息分组 -->
       <div class="flex-1 overflow-y-auto">
-        <div class="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">💬 消息</div>
+        <div class="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">消息</div>
         <div v-if="filteredConversations.length === 0 && !loading" class="px-5 py-8 text-center text-black/20 text-sm">
           暂无消息
         </div>

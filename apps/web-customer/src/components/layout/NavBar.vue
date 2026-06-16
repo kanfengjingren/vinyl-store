@@ -6,11 +6,11 @@
           幻觉贸易
         </router-link>
         <ul v-if="!auth.isAdmin" class="hidden md:flex gap-7 list-none">
-          <li><router-link to="/catalog?category=symphonic"
+          <li><router-link to="/catalog"
               class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">全部唱片</router-link>
           </li>
-          <li><a href="#"
-              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">新品上架</a>
+          <li><router-link to="/new-arrivals"
+              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">新品上架</router-link>
           </li>
           <li><a href="#"
               class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">关于我们</a>
