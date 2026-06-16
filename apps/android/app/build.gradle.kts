@@ -16,8 +16,8 @@ android {
         versionName = "1.0.0"
 
         // 开发环境指向本地；发行版改为生产地址
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api\"")
-        buildConfigField("String", "WEB_BASE_URL", "\"http://10.0.2.2:5173\"")
+        buildConfigField("String", "API_BASE_URL", "\"http://192.168.0.100:3000/api\"")
+        buildConfigField("String", "WEB_BASE_URL", "\"http://192.168.0.100:5173\"")
     }
 
     buildTypes {
