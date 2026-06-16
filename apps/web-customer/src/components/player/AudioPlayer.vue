@@ -1,6 +1,7 @@
 <template>
+  <!-- Mini bar UI: 隐藏于 Android（由原生 MiniPlayerBar 替代） -->
   <Transition name="player">
-    <div v-if="player.track" class="fixed bottom-0 left-0 right-0 z-[150] bg-white/95 backdrop-blur-xl border-t border-black/10 shadow-[0_-4px_20px_rgba(0,0,0,.06)]">
+    <div v-if="player.track && !isAndroid" class="fixed bottom-0 left-0 right-0 z-[150] bg-white/95 backdrop-blur-xl border-t border-black/10 shadow-[0_-4px_20px_rgba(0,0,0,.06)]">
       <div
         class="max-w-[1000px] mx-auto px-6 h-16 flex items-center gap-4 cursor-pointer"
         @click="openFullPlayer"
@@ -43,18 +44,20 @@
 
         <button @click.stop="stop" class="shrink-0 text-black/30 hover:text-black/60 transition-colors text-lg">&times;</button>
       </div>
-
-      <audio
-        ref="audioEl"
-        :src="player.src"
-        @timeupdate="onTimeUpdate"
-        @loadedmetadata="onLoaded"
-        @ended="onEnded"
-        @play="onPlay"
-        @pause="onPause"
-      />
     </div>
   </Transition>
+
+  <!-- Audio 元素始终渲染（有 track 时），与 Android/Web 无关 -->
+  <audio
+    v-if="player.track"
+    ref="audioEl"
+    :src="player.src"
+    @timeupdate="onTimeUpdate"
+    @loadedmetadata="onLoaded"
+    @ended="onEnded"
+    @play="onPlay"
+    @pause="onPause"
+  />
 </template>
 
 <script setup>
@@ -66,6 +69,7 @@ import { useAuthStore } from '../../stores/auth'
 const { nextTrack } = usePlayer()
 
 const auth = useAuthStore()
+const isAndroid = ref(typeof window.AndroidBridge !== 'undefined')
 const audioEl = ref(null)
 const playing = ref(false)
 const currentSeconds = ref(player.currentSeconds || 0)
@@ -99,19 +103,17 @@ function restoreAudio() {
   }
 }
 
-// 核心修复：src 变化时主动加载并播放
-watch(() => player.src, (newSrc) => {
-  if (!newSrc || !audioEl.value) return
+// src 变化或 audio 元素就绪时加载并播放
+watch([() => player.src, audioEl], ([newSrc, el]) => {
+  if (!newSrc || !el) return
   playing.value = false
   currentSeconds.value = 0
   duration.value = 0
-  // 等 Vue 把 src 绑定到 DOM 后再 load + play
   setTimeout(() => {
-    audioEl.value?.load()
-    audioEl.value?.play().catch(() => {})
+    el.load()
+    el.play().catch(() => {})
   }, 50)
 
-  // 记录播放历史
   if (auth.isLoggedIn && player.track) {
     recordPlay(player.track.id, player.track.albumId).catch(() => {})
   }
@@ -144,6 +146,7 @@ function onTimeUpdate() {
   if (audioEl.value) {
     currentSeconds.value = audioEl.value.currentTime
     player.currentSeconds = audioEl.value.currentTime
+    if (window.syncProgressToNative) window.syncProgressToNative()
   }
 }
 

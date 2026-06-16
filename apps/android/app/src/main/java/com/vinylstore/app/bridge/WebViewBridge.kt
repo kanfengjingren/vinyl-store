@@ -20,6 +20,8 @@ class WebViewBridge(
     private val tokenStorage: TokenStorage,
     private val onNavigateNative: (path: String, params: Map<String, String>) -> Unit = { _, _ -> },
     var onTitleChanged: (String) -> Unit = {},
+    var onPlaybackChanged: (trackTitle: String, artistName: String, coverUrl: String?, gradient: String?, isPlaying: Boolean, currentSeconds: Float, duration: Float) -> Unit = { _, _, _, _, _, _, _ -> },
+    var onPlaybackCleared: () -> Unit = {},
     private val gson: Gson = Gson()
 ) {
 
@@ -75,6 +77,39 @@ class WebViewBridge(
     fun goToHome() {
         Log.d(TAG, "goToHome")
         onNavigateNative("go_home", emptyMap())
+    }
+
+    /**
+     * 前端通知原生层：正在播放的曲目信息（用于更新 MiniPlayerBar）
+     * @param json { trackTitle, artistName, coverUrl?, gradient? }
+     */
+    @JavascriptInterface
+    fun setPlaybackState(json: String) {
+        Log.d(TAG, "setPlaybackState: $json")
+        try {
+            val map = gson.fromJson(json, Map::class.java) as? Map<*, *> ?: return
+            val title = (map["trackTitle"] as? String) ?: ""
+            val artist = (map["artistName"] as? String) ?: ""
+            if (title.isEmpty()) {
+                onPlaybackCleared()
+            } else {
+                val playing = (map["isPlaying"] as? Boolean) ?: true
+                val sec = (map["currentSeconds"] as? Number)?.toFloat() ?: 0f
+                val dur = (map["duration"] as? Number)?.toFloat() ?: 0f
+                onPlaybackChanged(title, artist, map["coverUrl"] as? String, map["gradient"] as? String, playing, sec, dur)
+            }
+        } catch (_: Exception) {
+            onPlaybackCleared()
+        }
+    }
+
+    /**
+     * 前端通知原生层：清除播放状态
+     */
+    @JavascriptInterface
+    fun clearPlaybackState() {
+        Log.d(TAG, "clearPlaybackState")
+        onPlaybackCleared()
     }
 
     /**

@@ -16,6 +16,9 @@ export interface User {
   role: 'CUSTOMER' | 'SELLER' | 'ADMIN';
   defaultAddress?: string;
   balance: number;
+  avatar?: string;
+  showPurchases?: boolean;
+  showFavorites?: boolean;
   seller?: Seller;
 }
 
@@ -175,6 +178,9 @@ export function getMe(): Promise<User>;
 export function fetchProfile(): Promise<User>;
 export function updateProfile(data: { defaultAddress: string }): Promise<User>;
 export function changePassword(data: { oldPassword: string; newPassword: string }): Promise<{ message: string }>;
+export function fetchPurchases(): Promise<any[]>;
+export function updateAvatar(avatar: string): Promise<User>;
+export function updatePrivacy(data: Record<string, boolean>): Promise<User>;
 
 // albums
 export function fetchAlbums(params?: QueryAlbumsParams): Promise<PaginatedResponse<Album>>;
@@ -210,6 +216,17 @@ export function uploadCover(file: File): Promise<string>;
 export function fetchSellers(status?: string): Promise<Seller[]>;
 export function approveSeller(id: number): Promise<Seller>;
 export function rejectSeller(id: number): Promise<Seller>;
+
+// favorites
+export function fetchFavorites(): Promise<any[]>;
+export function toggleFavorite(albumId: number): Promise<{ favorited: boolean }>;
+
+// ratings
+export function fetchAlbumRating(albumId: number): Promise<{ avgScore: number; count: number; userRating?: number }>;
+export function rateAlbum(albumId: number, score: number): Promise<{ score: number }>;
+
+// play-history
+export function fetchPlayHistory(limit?: number): Promise<any[]>;
 
 // wallet
 export function recharge(amount: number): Promise<{ balance: number }>;

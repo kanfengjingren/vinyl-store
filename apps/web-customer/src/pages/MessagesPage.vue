@@ -9,7 +9,65 @@
   <div class="fixed top-[52px] left-0 right-0 flex z-[1]" :class="player.track ? 'bottom-16' : 'bottom-0'">
     <!-- 左侧会话列表 -->
     <div class="w-[300px] shrink-0 border-r border-black/5 bg-white/50 flex flex-col">
-      <div class="px-5 py-4 text-sm font-semibold text-black border-b border-black/5">消息</div>
+      <!-- 搜索框 -->
+      <div class="px-4 py-3 border-b border-black/5 relative">
+        <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-black/5 focus-within:border-[rgb(196,147,51)] transition-colors">
+          <!-- <span class="text-sm text-gray-300"></span> -->
+          <input
+            v-model="searchQ"
+            @input="onSearchInput"
+            @focus="searchFocused = true"
+            @blur="searchFocused = false"
+            placeholder="搜索用户名添加好友"
+            class="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-300"
+          />
+        </div>
+        <!-- 搜索结果下拉 -->
+        <div v-if="searchResults.length > 0 && searchQ.trim()" class="absolute left-4 right-4 top-full mt-1 bg-white border border-gray-200 shadow-lg rounded-lg z-30 max-h-[240px] overflow-y-auto">
+          <div
+            v-for="u in searchResults"
+            :key="u.id"
+            class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+          >
+            <div class="shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-medium overflow-hidden">
+              <img v-if="u.avatar" :src="coverSrc(u.avatar)" class="w-full h-full object-cover" />
+              <span v-else>{{ (u.name || '?').slice(0, 1).toUpperCase() }}</span>
+            </div>
+            <span class="flex-1 text-sm text-black truncate">{{ u.name }}</span>
+            <button
+              @click="handleSearchAddFriend(u)"
+              class="shrink-0 px-3 py-1 text-xs bg-[rgb(196,147,51)] text-white hover:bg-[rgb(176,127,31)] disabled:opacity-50 transition-colors"
+            >添加</button>
+          </div>
+        </div>
+        <div v-else-if="searchQ.trim() && !searchLoading" class="absolute left-4 right-4 top-full mt-1 bg-white border border-gray-200 shadow-lg rounded-lg z-30 px-4 py-3 text-center text-xs text-gray-400">
+          未找到用户
+        </div>
+      </div>
+
+      <!-- 好友分组 -->
+      <div v-if="friends.length > 0" class="border-b border-black/5">
+        <div class="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">好友 · {{ friends.length }}</div>
+        <div
+          v-for="f in friends"
+          :key="f.friend.id"
+          @click="select(f.friend)"
+          :class="[
+            'px-5 py-3 cursor-pointer hover:bg-black/[0.02] transition-colors flex items-center gap-3',
+            activeId === f.friend.id ? 'bg-[rgb(196,147,51)]/5' : '',
+          ]"
+        >
+          <router-link :to="`/user/${f.friend.id}`" @click.stop class="shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-medium overflow-hidden hover:ring-2 hover:ring-[rgb(196,147,51)]/50 transition-all cursor-pointer">
+            <img v-if="f.friend.avatar" :src="coverSrc(f.friend.avatar)" class="w-full h-full object-cover" />
+            <span v-else>{{ (f.friend.name || '?').slice(0, 1).toUpperCase() }}</span>
+          </router-link>
+          <div class="flex-1 min-w-0">
+            <span class="text-sm font-medium text-black">{{ f.friend.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 消息分组 -->
       <div class="flex-1 overflow-y-auto">
         <div class="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">消息</div>
         <div v-if="filteredConversations.length === 0 && !loading" class="px-5 py-8 text-center text-black/20 text-sm">

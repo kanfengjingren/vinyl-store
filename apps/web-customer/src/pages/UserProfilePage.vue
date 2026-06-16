@@ -415,7 +415,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchProfile, updateProfile, recharge, changePassword, fetchPurchases, fetchFavorites, fetchPlayHistory, updateAvatar } from '@vinyl-store/shared'
+import { fetchProfile, updateProfile, recharge, changePassword, fetchPurchases, fetchFavorites, fetchPlayHistory, updateAvatar, updatePrivacy } from '@vinyl-store/shared'
 import api from '@vinyl-store/shared/api/client'
 import { useCartStore } from '../stores/cart'
 import { usePlayer } from '../stores/player'
@@ -456,6 +456,16 @@ const pwdOk = ref(false)
 // Avatar
 const uploading = ref(false);
 const avatarError = ref("");
+
+// Privacy
+const privacy = ref({ showPurchases: true, showFavorites: true });
+
+async function togglePrivacy(key) {
+  privacy.value[key] = !privacy.value[key];
+  try {
+    await updatePrivacy({ [key]: privacy.value[key] });
+  } catch {}
+}
 
 async function onAvatarChange(e) {
   const file = e.target.files?.[0];
@@ -637,6 +647,8 @@ onMounted(async () => {
     const data = await fetchProfile()
     profile.value = data
     address.value = data.defaultAddress || ''
+    privacy.value.showPurchases = data.showPurchases ?? true
+    privacy.value.showFavorites = data.showFavorites ?? true
   } finally { profileLoading.value = false }
 
   // Pre-load purchases to build purchasedIds set

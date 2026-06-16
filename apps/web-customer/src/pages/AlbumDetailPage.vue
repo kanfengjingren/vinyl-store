@@ -152,7 +152,7 @@ import { useAlbumStore } from '../stores/albums';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { useModalStore } from '@vinyl-store/shared';
-import { fetchFavorites, toggleFavorite } from '@vinyl-store/shared';
+import { fetchFavorites, toggleFavorite, fetchAlbumRating, rateAlbum } from '@vinyl-store/shared';
 import { player, usePlayer } from '../stores/player';
 import CommentSection from '../components/comment/CommentSection.vue';
 

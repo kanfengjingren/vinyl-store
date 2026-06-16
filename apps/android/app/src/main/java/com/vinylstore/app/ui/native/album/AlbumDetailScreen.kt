@@ -30,7 +30,7 @@ fun AlbumDetailScreen(
     albumsRepository: com.vinylstore.app.data.repository.AlbumRepository? = null,
     onBack: () -> Unit = {},
     onAddToCart: (albumJson: String) -> Unit = {},
-    onPlayTrack: (trackJson: String, artistName: String) -> Unit = { _, _ -> },
+    onPlayTrack: (trackJson: String, artistName: String, albumJson: String, trackListJson: String) -> Unit = { _, _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -105,13 +105,19 @@ fun AlbumDetailScreen(
             }
 
             uiState.album != null -> {
+                var playingTrackId by remember { mutableStateOf<Int?>(null) }
                 AlbumContent(
                     album = uiState.album!!,
                     isFavorited = uiState.isFavorited,
                     isTogglingFav = uiState.isTogglingFav,
+                    playingTrackId = playingTrackId,
                     onToggleFavorite = { viewModel.toggleFavorite() },
                     onAddToCart = onAddToCart,
-                    onPlayTrack = onPlayTrack,
+                    onPlayTrack = { trackJson, artistName, albumJson, trackListJson ->
+                        val track = com.google.gson.Gson().fromJson(trackJson, com.vinylstore.app.data.model.Track::class.java)
+                        playingTrackId = track.id
+                        onPlayTrack(trackJson, artistName, albumJson, trackListJson)
+                    },
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -124,9 +130,10 @@ private fun AlbumContent(
     album: com.vinylstore.app.data.model.Album,
     isFavorited: Boolean = false,
     isTogglingFav: Boolean = false,
+    playingTrackId: Int? = null,
     onToggleFavorite: () -> Unit = {},
     onAddToCart: (albumJson: String) -> Unit = {},
-    onPlayTrack: (trackJson: String, artistName: String) -> Unit = { _, _ -> },
+    onPlayTrack: (trackJson: String, artistName: String, albumJson: String, trackListJson: String) -> Unit = { _, _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val gson = remember { com.google.gson.Gson() }
@@ -347,17 +354,22 @@ private fun AlbumContent(
                         ) {
                             // 音轨按钮
                             if (track.audioUrl != null) {
+                                val isThisPlaying = playingTrackId == track.id
                                 Surface(
-                                    onClick = { onPlayTrack(gson.toJson(track), album.artist) },
+                                    onClick = {
+                                        val albumJson = gson.toJson(album)
+                                        val tracksJson = gson.toJson(album.tracks)
+                                        onPlayTrack(gson.toJson(track), album.artist, albumJson, tracksJson)
+                                    },
                                     modifier = Modifier.size(24.dp),
                                     shape = RoundedCornerShape(12.dp),
-                                    color = Gold.copy(alpha = 0.15f)
+                                    color = if (isThisPlaying) Gold else Gold.copy(alpha = 0.15f)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
-                                            "▶",
+                                            if (isThisPlaying) "⏸" else "▶",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = Gold
+                                            color = if (isThisPlaying) Color.White else Gold
                                         )
                                     }
                                 }

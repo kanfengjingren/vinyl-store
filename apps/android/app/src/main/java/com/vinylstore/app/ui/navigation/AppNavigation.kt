@@ -13,14 +13,20 @@ import android.widget.FrameLayout
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -31,10 +37,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import coil.compose.AsyncImage
 import com.vinylstore.app.BuildConfig
 import com.vinylstore.app.bridge.WebViewBridge
+import com.vinylstore.app.data.model.resolveCoverUrl
 import com.vinylstore.app.data.repository.AlbumRepository
 import com.vinylstore.app.local.TokenStorage
+import com.vinylstore.app.ui.theme.*
 import com.vinylstore.app.ui.native.album.AlbumDetailScreen
 import com.vinylstore.app.ui.native.home.HomeScreen
 import com.vinylstore.app.ui.native.home.HomeViewModel
@@ -49,6 +58,16 @@ private val tabRoutes = mapOf(
     3 to "/profile"
 )
 
+data class PlaybackState(
+    val trackTitle: String,
+    val artistName: String,
+    val coverUrl: String?,
+    val gradient: String?,
+    val isPlaying: Boolean = true,
+    val currentSeconds: Float = 0f,
+    val duration: Float = 0f
+)
+
 @Composable
 fun AppNavigation(
     tokenStorage: TokenStorage,
@@ -60,72 +79,141 @@ fun AppNavigation(
     // Tab 切换控制（WebView 内部可通过 bridge 切到首页）
     var homeTabIndex by remember { mutableIntStateOf(0) }
 
-    // Channel 用于将 Bridge 回调（非 UI 线程）抛到 Compose 主线程执行
+    // Channel: Bridge(非UI线程) → Compose 主线程
     val navChannel = remember { Channel<Pair<String, Map<String, String>>>(Channel.UNLIMITED) }
+    // Channel: WebView 播放状态 → Compose
+    val playbackChannel = remember { Channel<PlaybackState?>(Channel.UNLIMITED) }
 
     val bridge = remember {
         WebViewBridge(
             tokenStorage = tokenStorage,
             onNavigateNative = { path, params ->
                 navChannel.trySend(path to params)
+            },
+            onPlaybackChanged = { title, artist, cover, gradient, playing, sec, dur ->
+                playbackChannel.trySend(PlaybackState(title, artist, cover, gradient, playing, sec, dur))
+            },
+            onPlaybackCleared = {
+                playbackChannel.trySend(null)
             }
         )
     }
 
-    // 在主线程消费 bridge 导航事件
-    LaunchedEffect(Unit) {
-        for ((path, params) in navChannel) {
-            when (path) {
-                "album_detail" -> {
-                    params["slug"]?.let { slug ->
-                        navController.navigate("album_detail/$slug")
-                    }
-                }
-                "go_home" -> {
-                    homeTabIndex = 0
-                }
-                "go_cart" -> {
-                    homeTabIndex = 2
-                }
-            }
-        }
-    }
-
-    // 共享 WebView（在 AppNavigation 层级创建，所有子页面可引用）
+    // 共享 WebView
     val sharedWebView = remember {
         createSharedWebView(context, bridge, tokenStorage)
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = "main"
-    ) {
-        composable("main") {
-            MainTabScreen(
-                navController = navController,
-                webView = sharedWebView,
-                tokenStorage = tokenStorage,
-                albumRepository = albumRepository,
-                externalTabIndex = homeTabIndex,
-                onExternalTabConsumed = { homeTabIndex = -1 }
-            )
+    // 统一的播放状态（全局 MiniPlayerBar 数据源）
+    var playbackState by remember { mutableStateOf<PlaybackState?>(null) }
+
+    // 消费 channel 事件
+    LaunchedEffect(Unit) {
+        while (true) {
+            // 优先消费播放状态（高优先级）
+            val pb = playbackChannel.tryReceive()
+            if (pb.isSuccess) {
+                playbackState = pb.getOrNull()
+                continue
+            }
+            // 再消费导航事件
+            val nav = navChannel.tryReceive()
+            if (nav.isSuccess) {
+                val (path, params) = nav.getOrNull() ?: continue
+                when (path) {
+                    "album_detail" -> {
+                        params["slug"]?.let { slug ->
+                            navController.navigate("album_detail/$slug")
+                        }
+                    }
+                    "go_home" -> homeTabIndex = 0
+                    "go_cart" -> homeTabIndex = 2
+                }
+                continue
+            }
+            // 没有事件，等待一小段时间
+            kotlinx.coroutines.delay(50)
+        }
+    }
+
+    // 最外层 Box：NavHost + 全局 MiniPlayerBar
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavHost(
+            navController = navController,
+            startDestination = "main",
+            modifier = Modifier.padding(bottom = if (playbackState != null) 56.dp else 0.dp)
+        ) {
+            composable("main") {
+                MainTabScreen(
+                    navController = navController,
+                    webView = sharedWebView,
+                    tokenStorage = tokenStorage,
+                    albumRepository = albumRepository,
+                    externalTabIndex = homeTabIndex,
+                    onExternalTabConsumed = { homeTabIndex = -1 }
+                )
+            }
+
+            composable(
+                route = "album_detail/{slug}",
+                arguments = listOf(navArgument("slug") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val slug = backStackEntry.arguments?.getString("slug") ?: return@composable
+                AlbumDetailScreen(
+                    slug = slug,
+                    albumsRepository = albumRepository,
+                    onBack = { navController.popBackStack() },
+                    onAddToCart = { albumJson ->
+                        injectAddToCart(sharedWebView, albumJson)
+                    },
+                    onPlayTrack = { trackJson, artistName, albumJson, trackListJson ->
+                        // 更新全局播放状态
+                        try {
+                            val gson = com.google.gson.Gson()
+                            val album = gson.fromJson(albumJson, com.vinylstore.app.data.model.Album::class.java)
+                            val track = gson.fromJson(trackJson, com.vinylstore.app.data.model.Track::class.java)
+                            playbackState = PlaybackState(
+                                trackTitle = track.title,
+                                artistName = artistName,
+                                coverUrl = album.coverUrl,
+                                gradient = album.gradient,
+                                isPlaying = true
+                            )
+                        } catch (_: Exception) {}
+                        injectPlayTrack(sharedWebView, trackJson, artistName, albumJson, trackListJson)
+                    }
+                )
+            }
         }
 
-        composable(
-            route = "album_detail/{slug}",
-            arguments = listOf(navArgument("slug") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val slug = backStackEntry.arguments?.getString("slug") ?: return@composable
-            AlbumDetailScreen(
-                slug = slug,
-                albumsRepository = albumRepository,
-                onBack = { navController.popBackStack() },
-                onAddToCart = { albumJson ->
-                    injectAddToCart(sharedWebView, albumJson)
+        // 全局 MiniPlayerBar — 覆盖在所有页面之上
+        playbackState?.let { state ->
+            MiniPlayerBar(
+                state = state,
+                onTap = {
+                    // 跳回 main 页面，切到 catalog tab 后打开全屏播放器
+                    try { navController.popBackStack("main", false) } catch (_: Exception) {}
+                    homeTabIndex = 1
+                    sharedWebView.evaluateJavascript(
+                        "window.openFullPlayer && window.openFullPlayer()",
+                        null
+                    )
                 },
-                onPlayTrack = { trackJson, artistName ->
-                    injectPlayTrack(sharedWebView, trackJson, artistName)
-                }
+                onPlayPause = {
+                    sharedWebView.evaluateJavascript(
+                        "window.togglePlayback && window.togglePlayback()",
+                        null
+                    )
+                },
+                onClose = {
+                    playbackState = null
+                    // 通知 WebView 停止播放
+                    sharedWebView.evaluateJavascript(
+                        "window.stopPlayback && window.stopPlayback()",
+                        null
+                    )
+                },
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
     }
@@ -190,15 +278,14 @@ private fun injectAddToCart(webView: WebView, albumJson: String) {
     )
 }
 
-private fun injectPlayTrack(webView: WebView, trackJson: String, artistName: String) {
-    val escapedTrack = trackJson
-        .replace("\\", "\\\\")
-        .replace("'", "\\'")
-    val escapedArtist = artistName
-        .replace("\\", "\\\\")
-        .replace("'", "\\'")
+private fun injectPlayTrack(webView: WebView, trackJson: String, artistName: String, albumJson: String, trackListJson: String) {
+    fun escape(s: String) = s.replace("\\", "\\\\").replace("'", "\\'")
+    val escapedTrack = escape(trackJson)
+    val escapedArtist = escape(artistName)
+    val escapedAlbum = escape(albumJson)
+    val escapedTrackList = escape(trackListJson)
     webView.evaluateJavascript(
-        "window.playTrackFromNative('$escapedTrack', '$escapedArtist')",
+        "window.playTrackFromNative('$escapedTrack', '$escapedArtist', '$escapedAlbum', '$escapedTrackList')",
         null
     )
 }
@@ -213,17 +300,121 @@ private fun injectAuthToken(view: WebView?, tokenStorage: TokenStorage) {
         (function(){
             var t = localStorage.getItem('token');
             var nativeToken = '${nativeToken.replace("'", "\\'")}';
-            // If native has a token that WebView doesn't, inject it
             if (nativeToken && t !== nativeToken) {
                 localStorage.setItem('token', nativeToken);
             }
-            // If WebView has a token, sync it back to native
             if (t && typeof AndroidBridge !== 'undefined' && AndroidBridge.setToken) {
                 AndroidBridge.setToken(t);
             }
         })();
         """.trimIndent(), null
     )
+}
+
+@Composable
+fun MiniPlayerBar(
+    state: PlaybackState,
+    onTap: () -> Unit,
+    onPlayPause: () -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 4.dp,
+        shadowElevation = 8.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 12.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(
+                        state.gradient?.let { parseMiniGradient(it) }
+                            ?: Brush.horizontalGradient(listOf(Color(0xFF1A1A2E), Color(0xFF16213E)))
+                    )
+                    .clickable { onTap() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (!state.coverUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = resolveCoverUrl(state.coverUrl),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text("♪", color = Color.White.copy(alpha = 0.3f), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Spacer(Modifier.width(10.dp))
+
+            Surface(
+                onClick = onPlayPause,
+                modifier = Modifier.size(34.dp),
+                shape = RoundedCornerShape(17.dp),
+                color = Gold
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (state.isPlaying) "⏸" else "▶",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White
+                    )
+                }
+            }
+            Spacer(Modifier.width(10.dp))
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onTap() }
+            ) {
+                Text(
+                    text = state.trackTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = state.artistName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
+                Text(
+                    "✕",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextTertiary
+                )
+            }
+        }
+    }
+}
+
+private fun parseMiniGradient(gradient: String): Brush? {
+    try {
+        val hexRegex = Regex("#[0-9a-fA-F]{6}")
+        val colors = hexRegex.findAll(gradient).toList()
+        if (colors.size >= 2) {
+            val c1 = Color(android.graphics.Color.parseColor(colors[0].value))
+            val c2 = Color(android.graphics.Color.parseColor(colors[1].value))
+            return Brush.horizontalGradient(listOf(c1, c2))
+        }
+    } catch (_: Exception) {}
+    return null
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -353,7 +544,6 @@ private fun MainTabScreen(
                         IconButton(onClick = {
                             trackPath()
                             webView.evaluateJavascript("window.history.back()", null)
-                            // 延迟更新路径
                             webView.postDelayed({ trackPath() }, 300)
                         }) {
                             Icon(
@@ -417,7 +607,6 @@ private fun MainTabScreen(
             }
 
             // 共享 WebView（Tab 1-3）
-            // WebView 实例通过 remember 持久化，不会因 if 移除而销毁
             if (selectedTab != 0) {
                 AndroidView(
                     factory = { webView },
@@ -427,4 +616,3 @@ private fun MainTabScreen(
         }
     }
 }
-
