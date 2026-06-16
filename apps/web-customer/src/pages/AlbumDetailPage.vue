@@ -77,6 +77,36 @@
             >{{ favorited ? '♥' : '♡' }}</button>
           </div>
 
+          <!-- Rating -->
+          <div class="mt-8 pt-6 border-t border-white/10">
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-0.5">
+                <button
+                  v-for="s in 5" :key="s"
+                  @click="handleRate(s)"
+                  :disabled="ratingSubmitting"
+                  :title="auth.isLoggedIn ? `${s} 星` : '请先登录'"
+                  class="text-2xl leading-none transition-all bg-transparent border-none select-none"
+                  :class="[
+                    auth.isLoggedIn ? 'hover:scale-125 cursor-pointer' : 'cursor-default',
+                    s <= (hoverStar || userRating) ? 'text-[rgb(196,147,51)]' : 'text-white/20'
+                  ]"
+                  @mouseenter="auth.isLoggedIn && (hoverStar = s)"
+                  @mouseleave="hoverStar = 0"
+                >★</button>
+              </div>
+              <span class="text-white/70 text-sm">
+                <template v-if="avgScore > 0">
+                  <span class="font-semibold text-[rgb(196,147,51)]">{{ avgScore }}</span>
+                  <span class="text-white/50"> / 5</span>
+                </template>
+                <span v-else class="text-white/40">暂无评分</span>
+                <span v-if="count > 0" class="text-white/40 ml-1">({{ count }}人评分)</span>
+              </span>
+            </div>
+            <p v-if="userRating" class="text-xs text-white/40 mt-1.5">我的评分: {{ userRating }} 星</p>
+          </div>
+
           <!-- Tracks -->
           <div class="mt-10">
             <h3 class="text-[17px] font-semibold mb-4">曲目列表</h3>
@@ -134,6 +164,14 @@ const { play } = usePlayer();
 const album = ref(null);
 const loading = ref(false);
 const favorited = ref(false);
+
+// Rating
+const avgScore = ref(0);
+const count = ref(0);
+const userRating = ref(0);
+const hoverStar = ref(0);
+const ratingSubmitting = ref(false);
+
 const highlightCommentId = computed(() => {
   const id = parseInt(route.query.commentId);
   return isNaN(id) ? null : id;
@@ -145,6 +183,15 @@ async function load() {
   loading.value = true;
   try {
     album.value = await albumStore.loadAlbum(route.params.slug);
+    // 加载评分
+    if (album.value) {
+      try {
+        const rating = await fetchAlbumRating(album.value.id);
+        avgScore.value = rating.avgScore;
+        count.value = rating.count;
+        userRating.value = rating.userRating ?? 0;
+      } catch {}
+    }
     // 检查收藏状态
     if (auth.isLoggedIn && album.value) {
       try {
@@ -165,6 +212,21 @@ async function toggleFav() {
   } catch {}
 }
 
+async function handleRate(score) {
+  if (!auth.isLoggedIn || !album.value) return;
+  ratingSubmitting.value = true;
+  try {
+    await rateAlbum(album.value.id, score);
+    userRating.value = score;
+    // 刷新评分统计
+    const rating = await fetchAlbumRating(album.value.id);
+    avgScore.value = rating.avgScore;
+    count.value = rating.count;
+  } catch {} finally {
+    ratingSubmitting.value = false;
+  }
+}
+
 function coverSrc(url) {
   if (!url) return '';
   return url.startsWith('http') ? url : `/${url}`;
@@ -176,7 +238,7 @@ function onPlay(track) {
     player.showFullPlayer = true
     return
   }
-  play(track, album.value?.artist, album.value)
+  play(track, album.value?.artist, album.value, album.value?.tracks)
 }
 
 async function handleBuy() {

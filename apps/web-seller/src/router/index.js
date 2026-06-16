@@ -47,6 +47,11 @@ const routes = [
         component: () => import('../pages/StatsPage.vue'),
       },
       {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('../pages/SellerProfilePage.vue'),
+      },
+      {
         path: ':pathMatch(.*)*',
         name: 'not-found',
         component: () => import('../pages/NotFoundPage.vue'),

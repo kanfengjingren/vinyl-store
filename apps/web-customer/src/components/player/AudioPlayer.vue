@@ -9,12 +9,14 @@
         <div class="shrink-0 w-10 h-10 rounded-md overflow-hidden bg-gray-100"
           :style="{ background: player.album?.gradient || '#e5e7eb' }">
           <img v-if="player.album?.coverUrl" :src="coverSrc(player.album.coverUrl)" class="w-full h-full object-cover" />
-          <div v-else class="w-full h-full flex items-center justify-center text-lg text-white/30">♫</div>
+          <div v-else class="w-full h-full flex items-center justify-center text-lg text-white/30">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
         </div>
 
         <button @click.stop="toggle" class="w-9 h-9 rounded-full bg-[rgb(196,147,51)] text-white flex items-center justify-center hover:bg-[rgb(176,127,31)] transition-colors shrink-0">
-          <span v-if="!playing" class="text-sm ml-0.5">▶</span>
-          <span v-else class="text-sm">⏸</span>
+          <svg v-if="!playing" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 ml-0.5"><path d="M8 5v14l11-7z"/></svg>
+          <svg v-else viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
         </button>
 
         <div class="flex-1 min-w-0">
@@ -57,9 +59,11 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { player } from '../../stores/player'
+import { player, usePlayer } from '../../stores/player'
 import { recordPlay } from '@vinyl-store/shared'
 import { useAuthStore } from '../../stores/auth'
+
+const { nextTrack } = usePlayer()
 
 const auth = useAuthStore()
 const audioEl = ref(null)
@@ -151,6 +155,12 @@ function onLoaded() {
 }
 
 function onEnded() {
+  // 有播放列表 → 自动播放下一首
+  if (player.playlist.length > 0 && player.currentIndex >= 0) {
+    nextTrack()
+    return
+  }
+  // 没有播放列表 → 停止
   playing.value = false
   player.playing = false
   currentSeconds.value = 0

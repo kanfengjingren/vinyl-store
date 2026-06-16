@@ -74,3 +74,28 @@ export function updateAvatar(avatar) {
 export function fetchPublicProfile(userId) {
   return api.get(`/users/${userId}/profile`).then((r) => r.data);
 }
+
+/** 获取用户公开的已购专辑（尊重隐私设置） */
+export function fetchPublicPurchases(userId) {
+  return api.get(`/users/${userId}/purchases`).then((r) => r.data);
+}
+
+/** 获取用户公开的收藏专辑（尊重隐私设置） */
+export function fetchPublicFavorites(userId) {
+  return api.get(`/users/${userId}/favorites`).then((r) => r.data);
+}
+
+/** 获取商家公开的专辑列表 */
+export function fetchPublicSellerAlbums(userId) {
+  return api.get(`/users/${userId}/seller-albums`).then((r) => r.data);
+}
+
+/** 搜索用户（仅 CUSTOMER，用于添加好友） */
+export function searchUsers(q) {
+  return api.get('/users/search', { params: { q } }).then((r) => r.data);
+}
+
+/** 更新隐私设置 */
+export function updatePrivacy(data) {
+  return api.patch('/users/me/privacy', data).then((r) => r.data);
+}

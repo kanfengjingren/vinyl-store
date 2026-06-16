@@ -13,3 +13,5 @@ export * from './chat';
 export * from './comments';
 export * from './favorites';
 export * from './play-history';
+export * from './ratings';
+export * from './friends';

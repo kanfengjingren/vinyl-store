@@ -21,6 +21,8 @@ model User {
   balance           Int       @default(0)
   resetCode         String?
   resetCodeExpires  DateTime?
+  showPurchases     Boolean   @default(true)
+  showFavorites     Boolean   @default(true)
   createdAt         DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -30,8 +32,11 @@ model User {
 
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
+  sentFriendRequests     Friendship[] @relation("FriendshipSender")
+  receivedFriendRequests Friendship[] @relation("FriendshipReceiver")
   comments         Comment[]
   favorites        Favorite[]
+  ratings          Rating[]
   playHistory      PlayHistory[]
 
   @@map("users")
@@ -121,6 +126,7 @@ model Album {
   orderItems   OrderItem[]
   comments     Comment[]
   favorites    Favorite[]
+  ratings      Rating[]
   playHistory  PlayHistory[]
 
   @@map("albums")
@@ -311,6 +317,24 @@ model Favorite {
 }
 
 // ════════════════════════════════════════
+// RATING (专辑评分)
+// ════════════════════════════════════════
+model Rating {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  albumId   Int
+  score     Int      // 1-5 星
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@map("ratings")
+}
+
+// ════════════════════════════════════════
 // PLAY HISTORY (播放历史)
 // ════════════════════════════════════════
 model PlayHistory {
@@ -326,4 +350,28 @@ model PlayHistory {
 
   @@index([userId, playedAt])
   @@map("play_history")
+}
+
+// ════════════════════════════════════════
+// FRIENDSHIP (好友)
+// ════════════════════════════════════════
+model Friendship {
+  id         Int              @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  status     FriendshipStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  sender   User @relation("FriendshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@map("friendships")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }

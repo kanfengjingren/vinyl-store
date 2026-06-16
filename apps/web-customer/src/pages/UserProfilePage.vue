@@ -160,8 +160,53 @@
               {{ addressError }}
             </p>
           </div>
-          <button
-            :disabled="saving"
+          <!-- 隐私设置 -->
+          <div class="mb-8 p-5 border border-gray-100">
+            <p class="text-sm font-medium text-black mb-4">隐私设置</p>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-[14px] text-gray-700">公开已购专辑</p>
+                  <p class="text-xs text-gray-400">允许他人在你的个人主页看到已购专辑</p>
+                </div>
+                <button
+                  @click="togglePrivacy('showPurchases')"
+                  :class="[
+                    'relative w-11 h-6 rounded-full transition-colors shrink-0',
+                    privacy.showPurchases ? 'bg-black' : 'bg-gray-200'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                      privacy.showPurchases ? 'left-[22px]' : 'left-0.5'
+                    ]"
+                  ></span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-[14px] text-gray-700">公开收藏专辑</p>
+                  <p class="text-xs text-gray-400">允许他人在你的个人主页看到收藏专辑</p>
+                </div>
+                <button
+                  @click="togglePrivacy('showFavorites')"
+                  :class="[
+                    'relative w-11 h-6 rounded-full transition-colors shrink-0',
+                    privacy.showFavorites ? 'bg-black' : 'bg-gray-200'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                      privacy.showFavorites ? 'left-[22px]' : 'left-0.5'
+                    ]"
+                  ></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <button :disabled="saving"
             class="w-full py-3.5 bg-black text-white text-[15px] font-semibold border-none cursor-pointer hover:bg-black/80 transition-all disabled:opacity-50"
             @click="save"
           >
@@ -368,22 +413,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
-import {
-  fetchProfile,
-  updateProfile,
-  recharge,
-  changePassword,
-  fetchPurchases,
-  fetchFavorites,
-  fetchPlayHistory,
-  updateAvatar,
-} from "@vinyl-store/shared";
-import api from "@vinyl-store/shared/api/client";
-import { useCartStore } from "../stores/cart";
-import { usePlayer } from "../stores/player";
-import CitySelect from "@vinyl-store/shared/ui/CitySelect";
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { fetchProfile, updateProfile, recharge, changePassword, fetchPurchases, fetchFavorites, fetchPlayHistory, updateAvatar } from '@vinyl-store/shared'
+import api from '@vinyl-store/shared/api/client'
+import { useCartStore } from '../stores/cart'
+import { usePlayer } from '../stores/player'
+import CitySelect from '@vinyl-store/shared/ui/CitySelect'
 
 const router = useRouter();
 const cart = useCartStore();
@@ -399,23 +435,23 @@ const tabs = [
 const activeTab = ref("profile");
 
 // Profile
-const profile = ref({});
-const address = ref("");
-const addressDetail = ref("");
-const profileLoading = ref(true);
-const saving = ref(false);
-const saved = ref(false);
-const addressError = ref("");
-const rechargeAmount = ref(null);
-const recharging = ref(false);
-const rechargeMsg = ref("");
-const rechargeOk = ref(false);
-const showPwd = ref(false);
-const oldPassword = ref("");
-const newPassword = ref("");
-const pwdSaving = ref(false);
-const pwdMsg = ref("");
-const pwdOk = ref(false);
+const profile = ref({})
+const address = ref('')
+const addressDetail = ref('')
+const profileLoading = ref(true)
+const saving = ref(false)
+const saved = ref(false)
+const addressError = ref('')
+const rechargeAmount = ref(null)
+const recharging = ref(false)
+const rechargeMsg = ref('')
+const rechargeOk = ref(false)
+const showPwd = ref(false)
+const oldPassword = ref('')
+const newPassword = ref('')
+const pwdSaving = ref(false)
+const pwdMsg = ref('')
+const pwdOk = ref(false)
 
 // Avatar
 const uploading = ref(false);
@@ -558,12 +594,10 @@ async function save() {
   saving.value = true;
   saved.value = false;
   try {
-    const data = await updateProfile({ defaultAddress: address.value.trim() });
-    profile.value = { ...profile.value, ...data };
-    saved.value = true;
-  } finally {
-    saving.value = false;
-  }
+    const data = await updateProfile({ defaultAddress: address.value.trim() })
+    profile.value = data
+    saved.value = true
+  } finally { saving.value = false }
 }
 
 // Load data based on active tab
@@ -600,12 +634,10 @@ async function loadTabData() {
 onMounted(async () => {
   // Load profile
   try {
-    const data = await fetchProfile();
-    profile.value = data;
-    address.value = data.defaultAddress || "";
-  } finally {
-    profileLoading.value = false;
-  }
+    const data = await fetchProfile()
+    profile.value = data
+    address.value = data.defaultAddress || ''
+  } finally { profileLoading.value = false }
 
   // Pre-load purchases to build purchasedIds set
   try {

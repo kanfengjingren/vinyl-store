@@ -17,6 +17,8 @@ import { ChatModule } from './chat/chat.module';
 import { CommentsModule } from './comments/comments.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { PlayHistoryModule } from './play-history/play-history.module';
+import { RatingsModule } from './ratings/ratings.module';
+import { FriendsModule } from './friends/friends.module';
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { PlayHistoryModule } from './play-history/play-history.module';
     CommentsModule,
     FavoritesModule,
     PlayHistoryModule,
+    RatingsModule,
+    FriendsModule,
   ],
 })
 export class AppModule { }

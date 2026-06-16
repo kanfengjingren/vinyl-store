@@ -9,6 +9,11 @@ export function fetchHotAlbums(limit = 12) {
   return api.get('/albums/hot', { params: { limit } }).then((r) => r.data);
 }
 
+/** 个性化推荐：基于用户行为（需登录） */
+export function fetchRecommendations(limit = 12) {
+  return api.get('/albums/recommendations', { params: { limit } }).then((r) => r.data);
+}
+
 /** 卖家查看自己的专辑（含已下架） */
 export function fetchMyAlbums(params = {}) {
   return api.get('/albums/mine', { params }).then((r) => r.data);

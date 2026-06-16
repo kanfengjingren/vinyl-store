@@ -1,8 +1,16 @@
 <template>
   <Transition name="overlay">
     <div v-if="player.showFullPlayer" class="fixed inset-0 z-[200] flex flex-col">
-      <!-- 背景：专辑颜色 -->
-      <div class="absolute inset-0 transition-colors duration-700" :style="{ background: bgGradient }" @click="close"></div>
+      <!-- 背景：专辑封面全屏 -->
+      <div class="absolute inset-0" @click="close">
+        <div
+          v-if="player.album?.coverUrl"
+          class="absolute inset-0 bg-cover bg-center"
+          :style="{ backgroundImage: `url(${coverSrc(player.album.coverUrl)})` }"
+        ></div>
+        <div v-else class="absolute inset-0" :style="{ background: player.album?.gradient || 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }"></div>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-[1px]"></div>
+      </div>
 
       <!-- 内容 -->
       <div class="relative z-10 flex flex-col h-full max-w-[1100px] mx-auto w-full px-6 py-3">
@@ -37,7 +45,9 @@
                   :src="coverSrc(player.album.coverUrl)"
                   class="w-full h-full object-cover"
                 />
-                <div v-else class="w-full h-full flex items-center justify-center bg-white/10 text-white/30 text-4xl">♫</div>
+                <div v-else class="w-full h-full flex items-center justify-center bg-white/10 text-white/30">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-12 h-12"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                </div>
               </div>
               <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[14%] h-[14%] rounded-full bg-[#1a1a2e] border-[3px] border-white/20 z-10"></div>
             </div>
@@ -81,7 +91,7 @@
               </div>
 
               <!-- Tab 内容 -->
-              <div class="flex-1 overflow-y-auto pt-4 custom-scrollbar">
+              <div class="h-[500px] overflow-y-auto pt-4 custom-scrollbar">
                 <!-- 百科 -->
                 <div v-if="activeTab === 'wiki'">
                   <div v-if="player.album?.description" class="text-white/70 text-[14px] leading-relaxed whitespace-pre-line">
@@ -107,7 +117,9 @@
                           :src="coverSrc(album.coverUrl)"
                           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <div v-else class="w-full h-full flex items-center justify-center text-white/20 text-xl">♫</div>
+                        <div v-else class="w-full h-full flex items-center justify-center text-white/20">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        </div>
                       </div>
                       <p class="text-[12px] text-white/70 truncate group-hover:text-white transition-colors">{{ album.title }}</p>
                       <p class="text-[11px] text-white/40 truncate">{{ album.artist }}</p>
@@ -140,7 +152,9 @@
 
           <!-- 播放控制按钮 -->
           <div class="flex items-center justify-center gap-6">
-            <button class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/50 flex items-center justify-center transition-colors cursor-not-allowed" disabled>
+            <button @click="prevTrack" :disabled="!hasPlaylist"
+              class="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              :class="hasPlaylist ? 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white' : 'bg-white/5 text-white/30 cursor-not-allowed'">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
               </svg>
@@ -151,7 +165,9 @@
               <span v-else class="text-xl">⏸</span>
             </button>
 
-            <button class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/50 flex items-center justify-center transition-colors cursor-not-allowed" disabled>
+            <button @click="nextTrack" :disabled="!hasPlaylist"
+              class="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              :class="hasPlaylist ? 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white' : 'bg-white/5 text-white/30 cursor-not-allowed'">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
               </svg>
@@ -166,8 +182,13 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { player } from '../../stores/player'
+import { player, usePlayer } from '../../stores/player'
 import { fetchAlbums } from '@vinyl-store/shared'
+
+const { nextTrack, prevTrack } = usePlayer()
+
+// 是否有播放列表（决定上/下一首按钮是否可用）
+const hasPlaylist = computed(() => player.playlist.length > 0)
 
 // 打开播放器时禁用页面滚动
 watch(() => player.showFullPlayer, (val) => {
@@ -216,13 +237,6 @@ async function loadSimilar(album) {
 const progressPercent = computed(() => {
   if (!player.duration || player.duration === 0) return 0
   return Math.min((player.currentSeconds / player.duration) * 100, 100)
-})
-
-const bgGradient = computed(() => {
-  if (player.album?.gradient) {
-    return player.album.gradient
-  }
-  return 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
 })
 
 const discGradient = computed(() => {

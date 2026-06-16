@@ -46,6 +46,13 @@ export class AlbumsController {
     return this.albumsService.findHotAlbums(Math.min(n, 50));
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('recommendations')
+  getRecommendations(@Req() req: any, @Query('limit') limit?: string) {
+    const n = limit ? parseInt(limit, 10) || 12 : 12;
+    return this.albumsService.getRecommendations(req.user.userId, Math.min(n, 24));
+  }
+
   @Get(':slug')
   findBySlug(@Param('slug') slug: string) {
     return this.albumsService.findBySlug(slug);
