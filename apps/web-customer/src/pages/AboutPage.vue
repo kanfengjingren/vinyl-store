@@ -14,7 +14,7 @@
       <img
         v-for="(src, i) in images"
         :key="i"
-        :src="`/about/${src}`"
+        :src="`/about-images/${src}`"
         :alt="src"
         class="square-img shadow-lg"
       />
