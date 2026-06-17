@@ -12,8 +12,8 @@
           <li><router-link to="/new-arrivals"
               class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">新品上架</router-link>
           </li>
-          <li><a href="#"
-              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">关于我们</a>
+          <li><router-link to="/about"
+              class="text-[13px] text-apple-secondary no-underline hover:text-apple-text transition-colors">关于我们</router-link>
           </li>
         </ul>
       </div>

@@ -84,6 +84,13 @@ class MessagesViewModel(
         }
     }
 
+    /** 刷新：重新加载会话列表 + 已读标记 */
+    fun refresh() {
+        loadConversations()
+        loadUnreadCount()
+        loadFriends()
+    }
+
     fun loadUnreadCount() {
         viewModelScope.launch {
             try {

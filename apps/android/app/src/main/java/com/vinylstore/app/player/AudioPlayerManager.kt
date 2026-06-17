@@ -12,9 +12,14 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.vinylstore.app.data.model.Album
 import com.vinylstore.app.data.model.Track
 import com.vinylstore.app.data.model.resolveCoverUrl
+import com.vinylstore.app.data.repository.PlayHistoryRepository
+import com.vinylstore.app.local.TokenStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class PlayerState(
     val track: Track? = null,
@@ -43,6 +48,12 @@ class AudioPlayerManager(context: Context) {
     private var currentIdx: Int = -1
 
     private val handler = Handler(Looper.getMainLooper())
+    private val scope = CoroutineScope(Dispatchers.IO)
+    private var playHistoryRepo: PlayHistoryRepository? = null
+
+    fun setPlayHistoryRepo(repo: PlayHistoryRepository) {
+        playHistoryRepo = repo
+    }
     private val positionUpdater = object : Runnable {
         override fun run() {
             try {
@@ -120,6 +131,13 @@ class AudioPlayerManager(context: Context) {
             playlist = playlist,
             currentIndex = currentIdx
         )
+
+        // 记录播放历史
+        scope.launch {
+            try {
+                playHistoryRepo?.recordPlay(track.id, album?.id)
+            } catch (_: Exception) {}
+        }
     }
 
     fun togglePlayPause() {

@@ -158,221 +158,245 @@ private fun CheckoutContent(
     onAlbumClick: (String) -> Unit
 ) {
     val balanceInsufficient = uiState.balance < uiState.total
+    val scrollState = rememberScrollState()
 
-    // 手机竖屏用单列，宽屏用左右分栏
-    Column(modifier = Modifier.fillMaxSize()) {
-        // ── 主体（左右分栏或上下） ──
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) {
-            // 左侧：收货地址
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(24.dp)
+    ) {
+        // ═══════════════════════════════════════
+        // 收货地址
+        // ═══════════════════════════════════════
+
+        // ── 地址为空时的醒目提醒 ──
+        if (uiState.shippingAddress.isBlank()) {
+            Card(
+                shape = MaterialTheme.shapes.extraSmall,
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
+                ),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    "收货地址",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = uiState.shippingAddress,
-                    onValueChange = onAddressChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("请输入收货地址") },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    minLines = 2,
-                    isError = uiState.shippingAddress.isBlank()
-                )
-
-                if (uiState.shippingAddress.isBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "请填写收货地址，否则无法下单",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "修改仅对本次订单生效，不会更新默认地址",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                )
-
-                Spacer(Modifier.weight(1f))
-
-                TextButton(
-                    onClick = onBack,
-                    shape = MaterialTheme.shapes.extraSmall
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Text("取消订单", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "⚠️",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "尚未填写收货地址",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "请填写收货地址，否则无法确认下单",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
+            Spacer(Modifier.height(16.dp))
+        }
 
-            // 分隔线
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(1.dp)
-                    .background(MaterialTheme.colorScheme.outlineVariant)
+        Text(
+            "收货地址",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = uiState.shippingAddress,
+            onValueChange = onAddressChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("请输入收货地址") },
+            shape = MaterialTheme.shapes.extraSmall,
+            minLines = 2,
+            isError = uiState.shippingAddress.isBlank()
+        )
+
+        if (uiState.shippingAddress.isBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "请填写收货地址，否则无法下单",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
             )
+        }
 
-            // 右侧：订单摘要
-            Column(
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "修改仅对本次订单生效，不会更新默认地址",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
+
+        // ═══════════════════════════════════════
+        // 分隔
+        // ═══════════════════════════════════════
+
+        Spacer(Modifier.height(24.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(Modifier.height(16.dp))
+
+        // ═══════════════════════════════════════
+        // 订单内容
+        // ═══════════════════════════════════════
+
+        Text(
+            "订单内容",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(12.dp))
+
+        // 订单条目
+        uiState.items.forEach { item ->
+            val album = item.album ?: return@forEach
+            Row(
                 modifier = Modifier
-                    .width(380.dp)
-                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "订单内容",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 8.dp)
-                )
-
-                // 可滚动条目列表
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 24.dp)
-                ) {
-                    items(uiState.items, key = { it.id }) { item ->
-                        val album = item.album ?: return@items
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = resolveCoverUrl(album.coverUrl),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable { onAlbumClick(album.slug) }
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    album.artist,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    album.title,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Text(
-                                "×${item.quantity}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                "¥${album.price * item.quantity}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-
-                // 底部固定摘要 + 确认按钮
-                Column(
+                AsyncImage(
+                    model = resolveCoverUrl(album.coverUrl),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                ) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Spacer(Modifier.height(8.dp))
-
-                    SummaryRow("小计", "¥${uiState.total}")
-                    Spacer(Modifier.height(4.dp))
-                    SummaryRow(
-                        "账户余额",
-                        "¥${uiState.balance}",
-                        valueColor = if (balanceInsufficient)
-                            MaterialTheme.colorScheme.error
-                        else
-                            androidx.compose.ui.graphics.Color(0xFF22C55E)
+                        .size(48.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { onAlbumClick(album.slug) }
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        album.artist,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                    Text(
+                        album.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    SummaryRow(
-                        "应付",
-                        "¥${uiState.total}",
-                        valueStyle = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    if (balanceInsufficient) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "余额不足，请先充值",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-
-                    if (uiState.error != null) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            uiState.error!!,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Button(
-                        onClick = onConfirm,
-                        enabled = !uiState.isSubmitting
-                                && uiState.shippingAddress.isNotBlank()
-                                && !balanceInsufficient,
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        shape = MaterialTheme.shapes.extraSmall,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            disabledContainerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
-                    ) {
-                        Text(
-                            if (uiState.isSubmitting) "提交中..." else "确认下单",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
                 }
+                Text(
+                    "×${item.quantity}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "¥${album.price * item.quantity}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
+
+        // ═══════════════════════════════════════
+        // 合计 + 确认
+        // ═══════════════════════════════════════
+
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(Modifier.height(12.dp))
+
+        SummaryRow("小计", "¥${uiState.total}")
+        Spacer(Modifier.height(4.dp))
+        SummaryRow(
+            "账户余额",
+            "¥${uiState.balance}",
+            valueColor = if (balanceInsufficient)
+                MaterialTheme.colorScheme.error
+            else
+                androidx.compose.ui.graphics.Color(0xFF22C55E)
+        )
+
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        SummaryRow(
+            "应付",
+            "¥${uiState.total}",
+            valueStyle = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        if (balanceInsufficient) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "余额不足，请先充值",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        if (uiState.error != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                uiState.error!!,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        Button(
+            onClick = onConfirm,
+            enabled = !uiState.isSubmitting
+                    && uiState.shippingAddress.isNotBlank()
+                    && !balanceInsufficient,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        ) {
+            Text(
+                if (uiState.isSubmitting) "提交中..." else "确认下单",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        TextButton(
+            onClick = onBack,
+            shape = MaterialTheme.shapes.extraSmall,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("取消并返回", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
+        Spacer(Modifier.height(24.dp))
     }
 }
 

@@ -374,9 +374,9 @@ data class FavoriteItem(
 )
 
 data class RatingResponse(
-    val average: Float?,
+    @SerializedName("avgScore") val average: Float?,
     val count: Int,
-    val userScore: Int?
+    @SerializedName("userRating") val userScore: Int?
 )
 data class RateAlbumRequest(val score: Int)  // 1-5
 
@@ -401,7 +401,7 @@ data class RechargeResponse(val balance: Int)
 // 上传
 // ═══════════════════════════════════════════
 
-data class UploadResponse(val url: String)
+data class UploadResponse(val url: String?)
 
 // ═══════════════════════════════════════════
 // 颜色 / 国家（简单列表）

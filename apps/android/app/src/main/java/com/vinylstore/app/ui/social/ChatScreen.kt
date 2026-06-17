@@ -32,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.vinylstore.app.VinylApp
 import com.vinylstore.app.data.model.Message
+import com.vinylstore.app.data.model.resolveCoverUrl
 import com.vinylstore.app.ui.components.ErrorState
 import com.vinylstore.app.ui.components.LoadingState
 import org.json.JSONObject
@@ -49,17 +50,29 @@ fun ChatScreen(
     val app = VinylApp.instance
     val viewModel: ChatViewModel = viewModel(
         factory = ChatViewModel.Factory(
-            app.chatRepository, app.friendRepository, app.chatSocketManager
+            app.chatRepository, app.friendRepository, app.userRepository, app.chatSocketManager
         )
     )
     val uiState by viewModel.uiState.collectAsState()
     val currentUserId by app.authRepository.currentUserIdFlow.collectAsState(initial = null)
+
+    // 从缓存中读取当前用户头像
+    val myAvatar by produceState<String?>(null) {
+        app.tokenStorage.userJsonFlow.collect { json ->
+            value = json?.let {
+                try {
+                    com.google.gson.Gson().fromJson(it, com.vinylstore.app.data.model.User::class.java).avatar
+                } catch (_: Exception) { null }
+            }
+        }
+    }
+
     val Gold = Color(0xFFC49333)
 
     // 初始化
     LaunchedEffect(partnerId, currentUserId) {
         val uid = currentUserId ?: return@LaunchedEffect
-        viewModel.init(partnerId, uid)
+        viewModel.init(partnerId, uid, myAvatar)
     }
 
     // Socket 生命周期
@@ -213,6 +226,8 @@ fun ChatScreen(
                             ChatMessageItem(
                                 message = msg,
                                 isMine = msg.senderId == currentUserId,
+                                partnerAvatar = uiState.partnerAvatar,
+                                myAvatar = myAvatar,
                                 actionLoading = uiState.actionLoading,
                                 onImageClick = { viewModel.setPreviewImage(it) },
                                 onUserClick = onUserClick,
@@ -310,6 +325,7 @@ fun ChatScreen(
 
     // ── 全屏图片预览 ──
     uiState.previewImageUrl?.let { url ->
+        val resolvedUrl = resolveCoverUrl(url) ?: url
         Dialog(
             onDismissRequest = { viewModel.setPreviewImage(null) },
             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -322,7 +338,7 @@ fun ChatScreen(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = url,
+                    model = resolvedUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize().padding(16.dp)
@@ -340,6 +356,8 @@ fun ChatScreen(
 private fun ChatMessageItem(
     message: Message,
     isMine: Boolean,
+    partnerAvatar: String?,
+    myAvatar: String?,
     actionLoading: Int?,
     onImageClick: (String) -> Unit,
     onUserClick: (Int) -> Unit,
@@ -389,11 +407,18 @@ private fun ChatMessageItem(
                         .clickable { message.senderId?.let { onUserClick(it) } },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "?",
-                        color = Color(0xFF999999),
-                        fontSize = 12.sp
-                    )
+                    val avatarUrl = resolveCoverUrl(partnerAvatar)
+                    if (avatarUrl != null) {
+                        AsyncImage(
+                            model = avatarUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize().clip(CircleShape)
+                        )
+                    } else {
+                        Text(
+                            "?", color = Color(0xFF999999), fontSize = 12.sp
+                        )
+                    }
                 }
                 Spacer(Modifier.width(6.dp))
             }
@@ -403,6 +428,7 @@ private fun ChatMessageItem(
             ) {
                 // 图片
                 if (!message.imageUrl.isNullOrBlank()) {
+                    val resolvedUrl = resolveCoverUrl(message.imageUrl) ?: message.imageUrl
                     Box(
                         modifier = Modifier
                             .widthIn(max = 240.dp)
@@ -410,7 +436,7 @@ private fun ChatMessageItem(
                             .clickable { onImageClick(message.imageUrl) }
                     ) {
                         AsyncImage(
-                            model = message.imageUrl,
+                            model = resolvedUrl,
                             contentDescription = null,
                             contentScale = ContentScale.FillWidth,
                             modifier = Modifier.widthIn(max = 240.dp)
@@ -447,12 +473,18 @@ private fun ChatMessageItem(
                         .background(Gold.copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "我",
-                        color = Gold,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    val avatarUrl = resolveCoverUrl(myAvatar)
+                    if (avatarUrl != null) {
+                        AsyncImage(
+                            model = avatarUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize().clip(CircleShape)
+                        )
+                    } else {
+                        Text(
+                            "我", color = Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

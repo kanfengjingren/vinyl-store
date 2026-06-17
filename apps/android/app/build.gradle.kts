@@ -14,9 +14,20 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+    }
 
-        // 调试时改为你电脑的局域网 IP；生产环境用正式域名
-        buildConfigField("String", "API_BASE_URL", "\"http://192.168.12.104:3000/api\"")
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.12.104:3000/api\"")
+        }
+        create("prod") {
+            dimension = "environment"
+            buildConfigField("String", "API_BASE_URL", "\"http://139.224.29.234/api\"")
+        }
     }
 
     buildTypes {
@@ -26,7 +37,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "API_BASE_URL", "\"https://your-production-domain.com/api\"")
         }
     }
 

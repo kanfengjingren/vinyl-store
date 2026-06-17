@@ -374,6 +374,8 @@ private fun ProfileInfoTab(
             TextButton(
                 onClick = {
                     viewModel.logout()
+                    app.chatSocketManager.reset()
+                    try { app.playerManager.stop() } catch (_: Exception) {}
                     onLoggedOut()
                 },
                 modifier = Modifier.fillMaxWidth(),

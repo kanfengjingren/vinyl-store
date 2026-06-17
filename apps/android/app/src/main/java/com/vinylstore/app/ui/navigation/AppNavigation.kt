@@ -65,6 +65,11 @@ fun AppNavigation() {
     val playerState by app.playerManager.state.collectAsState()
     var showFullPlayer by remember { mutableStateOf(false) }
 
+    // 注入播放历史记录
+    LaunchedEffect(Unit) {
+        app.playerManager.setPlayHistoryRepo(app.playHistoryRepository)
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
         topBar = {
@@ -172,7 +177,7 @@ fun AppNavigation() {
                     onOrdersClick = { navController.navigate(Screen.Orders.route) },
                     onLoginRequired = { navController.navigate(Screen.Login.route) },
                     onLoggedOut = {
-                        navController.navigate(Screen.Home.route) {
+                        navController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
                         }
                     }

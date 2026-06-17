@@ -29,14 +29,14 @@ data class OrdersUiState(
             OrderTab.ALL -> orders
             OrderTab.PENDING -> orders.filter { it.status == "PENDING" }
             OrderTab.RECEIVING -> orders.filter { it.status == "PAID" || it.status == "SHIPPED" }
-            OrderTab.COMPLETED -> orders.filter { it.status == "DELIVERED" || it.status == "CANCELLED" }
+            OrderTab.COMPLETED -> orders.filter { it.status == "DELIVERED" }
         }
 
     fun countForTab(tab: OrderTab): Int = when (tab) {
         OrderTab.ALL -> orders.size
         OrderTab.PENDING -> orders.count { it.status == "PENDING" }
         OrderTab.RECEIVING -> orders.count { it.status == "PAID" || it.status == "SHIPPED" }
-        OrderTab.COMPLETED -> orders.count { it.status == "DELIVERED" || it.status == "CANCELLED" }
+        OrderTab.COMPLETED -> orders.count { it.status == "DELIVERED" }
     }
 }
 

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.vinylstore.app.data.model.Friend
 import com.vinylstore.app.data.model.UserSearchResult
+import com.vinylstore.app.data.model.resolveCoverUrl
 
 @Composable
 fun FriendsSection(
@@ -93,6 +94,7 @@ fun FriendsSection(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable { onUserClick(user.id) }
                             .padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -101,13 +103,12 @@ fun FriendsSection(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(surfaceVariant)
-                                .clickable { onUserClick(user.id) },
+                                .background(surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
                             if (user.avatar != null) {
                                 AsyncImage(
-                                    model = user.avatar,
+                                    model = resolveCoverUrl(user.avatar),
                                     contentDescription = null,
                                     modifier = Modifier.size(36.dp).clip(CircleShape)
                                 )
@@ -174,6 +175,7 @@ fun FriendsSection(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable { user?.id?.let { onUserClick(it) } }
                             .padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -181,13 +183,12 @@ fun FriendsSection(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(surfaceVariant)
-                                .clickable { user?.id?.let { onUserClick(it) } },
+                                .background(surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
                             if (user?.avatar != null) {
                                 AsyncImage(
-                                    model = user.avatar,
+                                    model = resolveCoverUrl(user.avatar),
                                     contentDescription = null,
                                     modifier = Modifier.size(36.dp).clip(CircleShape)
                                 )
@@ -277,7 +278,7 @@ fun FriendsSection(
                         ) {
                             if (user?.avatar != null) {
                                 AsyncImage(
-                                    model = user.avatar,
+                                    model = resolveCoverUrl(user.avatar),
                                     contentDescription = null,
                                     modifier = Modifier.size(40.dp).clip(CircleShape)
                                 )

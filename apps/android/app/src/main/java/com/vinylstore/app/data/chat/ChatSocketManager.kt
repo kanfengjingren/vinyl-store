@@ -147,6 +147,17 @@ class ChatSocketManager(private val tokenStorage: TokenStorage) {
         socket?.emit("unreadCount")
     }
 
+    /** 登出时调用：断开连接并清除所有缓存状态 */
+    fun reset() {
+        disconnect()
+        activeScreenCount = 0
+        runOnMain {
+            _unreadCount.value = 0
+            _newMessage.value = null
+            _connectionState.value = SocketState.DISCONNECTED
+        }
+    }
+
     private fun runOnMain(block: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             block()

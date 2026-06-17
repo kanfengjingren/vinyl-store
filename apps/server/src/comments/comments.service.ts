@@ -92,7 +92,7 @@ export class CommentsService {
 
       // 如果回复的不是自己的评论，发送消息通知
       if (replyToUserId !== userId) {
-        await this.prisma.message.create({
+        const message = await this.prisma.message.create({
           data: {
             senderId: userId,
             receiverId: replyToUserId,
@@ -107,7 +107,8 @@ export class CommentsService {
           },
         });
 
-        // 实时推送未读数给被回复者
+        // 实时推送给被回复者
+        this.chatGateway.server.to(`user:${replyToUserId}`).emit('newMessage', message);
         this.chatGateway.pushUnreadCount(replyToUserId);
       }
 

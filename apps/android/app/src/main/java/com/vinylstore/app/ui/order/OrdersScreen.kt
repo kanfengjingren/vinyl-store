@@ -254,7 +254,7 @@ private fun OrderCard(
                             TextButton(
                                 onClick = onClick,
                                 shape = MaterialTheme.shapes.extraSmall
-                            ) { Text("查看物流", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            ) { Text("查看详情", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                         else -> {
                             TextButton(

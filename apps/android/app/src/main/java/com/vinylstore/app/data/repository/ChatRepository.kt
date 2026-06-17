@@ -28,7 +28,13 @@ class ChatRepository(private val tokenStorage: TokenStorage) {
     suspend fun markAllMessagesRead(): MessageResponse = api.markAllMessagesRead()
 
     suspend fun uploadChatImage(file: File): UploadResponse {
-        val requestBody = file.asRequestBody("image/*".toMediaTypeOrNull())
+        val mimeType = when {
+            file.name.endsWith(".png", true) -> "image/png"
+            file.name.endsWith(".webp", true) -> "image/webp"
+            file.name.endsWith(".gif", true) -> "image/gif"
+            else -> "image/jpeg"
+        }
+        val requestBody = file.asRequestBody(mimeType.toMediaTypeOrNull())
         val part = MultipartBody.Part.createFormData("file", file.name, requestBody)
         return api.uploadChatImage(part)
     }

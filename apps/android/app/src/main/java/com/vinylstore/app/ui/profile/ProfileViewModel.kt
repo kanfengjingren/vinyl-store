@@ -100,7 +100,6 @@ class ProfileViewModel(
     private fun loadTabData(tab: ProfileTab) {
         when (tab) {
             ProfileTab.PURCHASES -> {
-                if (_uiState.value.purchases.isNotEmpty()) return
                 viewModelScope.launch {
                     _uiState.value = _uiState.value.copy(purchasesLoading = true)
                     try {
@@ -112,7 +111,6 @@ class ProfileViewModel(
                 }
             }
             ProfileTab.FAVORITES -> {
-                if (_uiState.value.favorites.isNotEmpty()) return
                 viewModelScope.launch {
                     _uiState.value = _uiState.value.copy(favsLoading = true)
                     try {
@@ -124,7 +122,6 @@ class ProfileViewModel(
                 }
             }
             ProfileTab.HISTORY -> {
-                if (_uiState.value.playHistory.isNotEmpty()) return
                 viewModelScope.launch {
                     _uiState.value = _uiState.value.copy(historyLoading = true)
                     try {

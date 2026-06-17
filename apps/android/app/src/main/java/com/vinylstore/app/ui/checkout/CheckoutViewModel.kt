@@ -73,11 +73,16 @@ class CheckoutViewModel(
         val state = _uiState.value
         if (state.isSubmitting || state.submitted) return
 
+        val address = state.shippingAddress.trim()
+        if (address.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "请先填写收货地址")
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSubmitting = true, error = null)
             try {
-                val address = state.shippingAddress.trim().ifEmpty { null }
-                orderRepository.checkout(address ?: "")
+                orderRepository.checkout(address)
                 // Refresh cart to clear items
                 cartRepository.getCart()
                 _uiState.value = _uiState.value.copy(

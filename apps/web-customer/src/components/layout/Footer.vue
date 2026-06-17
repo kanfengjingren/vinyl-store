@@ -33,10 +33,10 @@ const columns = [
     { label: '联系我们' },
   ]},
   { title: '关于', links: [
-    { label: '我们的故事' },
-    { label: '策展哲学' },
-    { label: '门店地址' },
-    { label: '加入我们' },
+    { label: '我们的故事', to: '/about' },
+    { label: '策展哲学', to: '/about' },
+    { label: '门店地址', to: '/about' },
+    { label: '加入我们', to: '/about' },
   ]},
 ];
 </script>

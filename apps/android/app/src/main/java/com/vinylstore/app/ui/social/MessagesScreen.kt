@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -117,6 +118,26 @@ fun MessagesScreen(
 
             HorizontalDivider(color = Color(0xFFEEEEEE))
 
+            // ── 刷新按钮 ──
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(
+                    onClick = { viewModel.refresh() },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "刷新",
+                        tint = Color(0xFF999999),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
             // ── 对话列表 ──
             when {
                 uiState.conversationsLoading -> LoadingState(Modifier.weight(1f))
@@ -208,7 +229,7 @@ private fun ConversationRow(
             conv.lastMessage?.let { msg ->
                 val preview = when {
                     msg.imageUrl != null -> "[图片]"
-                    msg.content != null -> msg.content
+                    msg.content != null -> formatMessagePreview(msg.content)
                     else -> ""
                 }
                 Text(
@@ -236,5 +257,30 @@ private fun ConversationRow(
                 )
             }
         }
+    }
+}
+
+/** 把消息内容转为列表预览文本：JSON 特殊消息解析为人话，普通文本直接返回 */
+private fun formatMessagePreview(content: String): String {
+    return try {
+        val json = org.json.JSONObject(content)
+        when (json.optString("type", null)) {
+            "comment_reply" -> {
+                val albumTitle = json.optString("albumTitle", "")
+                if (albumTitle.isNotBlank()) "在《$albumTitle》中回复了你"
+                else "回复了你的评论"
+            }
+            "friend_request" -> {
+                val status = json.optString("status", "pending")
+                when (status) {
+                    "accepted" -> "已添加为好友"
+                    "rejected" -> "已拒绝好友请求"
+                    else -> "请求添加你为好友"
+                }
+            }
+            else -> content
+        }
+    } catch (_: Exception) {
+        content
     }
 }

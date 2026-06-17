@@ -8,6 +8,7 @@ import com.vinylstore.app.data.chat.SocketState
 import com.vinylstore.app.data.model.*
 import com.vinylstore.app.data.repository.ChatRepository
 import com.vinylstore.app.data.repository.FriendRepository
+import com.vinylstore.app.data.repository.UserRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,8 @@ import java.io.File
 data class ChatUiState(
     val partnerId: Int = 0,
     val partner: ConversationPartner? = null,
+    val partnerAvatar: String? = null,
+    val myAvatar: String? = null,
     val messages: List<Message> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -35,6 +38,7 @@ data class ChatUiState(
 class ChatViewModel(
     private val chatRepository: ChatRepository,
     private val friendRepository: FriendRepository,
+    private val userRepository: UserRepository,
     private val socketManager: ChatSocketManager
 ) : ViewModel() {
 
@@ -44,11 +48,33 @@ class ChatViewModel(
     private var socketCollectJob: Job? = null
     private var currentUserId: Int = 0
 
-    fun init(partnerId: Int, myUserId: Int) {
+    fun init(partnerId: Int, myUserId: Int, myAvatar: String?) {
         currentUserId = myUserId
-        _uiState.value = _uiState.value.copy(partnerId = partnerId)
+        _uiState.value = _uiState.value.copy(
+            partnerId = partnerId,
+            myAvatar = myAvatar
+        )
         loadMessages(partnerId)
+        loadPartnerInfo(partnerId)
         observeSocket()
+    }
+
+    private fun loadPartnerInfo(partnerId: Int) {
+        viewModelScope.launch {
+            try {
+                val profile = userRepository.getPublicProfile(partnerId)
+                _uiState.value = _uiState.value.copy(
+                    partner = ConversationPartner(
+                        id = profile.id,
+                        name = profile.name,
+                        email = profile.email,
+                        avatar = profile.avatar,
+                        storeName = profile.storeName
+                    ),
+                    partnerAvatar = profile.avatar
+                )
+            } catch (_: Exception) {}
+        }
     }
 
     // ═══════════════════════════════════════════
@@ -60,10 +86,18 @@ class ChatViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val msgs = chatRepository.getMessages(partnerId)
+                // 过滤掉自己发的 comment_reply 通知（自己回复别人不需要提醒自己）
+                val filtered = msgs.filter { msg ->
+                    if (msg.senderId == currentUserId && msg.content != null) {
+                        try {
+                            org.json.JSONObject(msg.content).optString("type", null) != "comment_reply"
+                        } catch (_: Exception) { true }
+                    } else true
+                }
                 // 标记已读
                 try { chatRepository.markMessagesRead(partnerId) } catch (_: Exception) {}
                 _uiState.value = _uiState.value.copy(
-                    messages = msgs,
+                    messages = filtered,
                     isLoading = false
                 )
             } catch (e: Exception) {
@@ -124,6 +158,13 @@ class ChatViewModel(
             try {
                 val uploadResp = chatRepository.uploadChatImage(file)
                 val imageUrl = uploadResp.url
+                if (imageUrl.isNullOrBlank()) {
+                    _uiState.value = _uiState.value.copy(
+                        isUploadingImage = false,
+                        actionError = "图片上传失败，请重试"
+                    )
+                    return@launch
+                }
                 val tempId = -System.currentTimeMillis()
                 val optimisticMsg = Message(
                     id = tempId.toInt(),
@@ -211,6 +252,9 @@ class ChatViewModel(
         val imageUrl = json.optString("imageUrl", null)
         val createdAt = json.optString("createdAt", null)
         val type = json.optString("type", null)
+
+        // 忽略自己发出的系统消息（如评论通知）
+        if (senderId == currentUserId) return
 
         // 只处理与当前对话相关的消息
         val partnerId = _uiState.value.partnerId
@@ -332,12 +376,13 @@ class ChatViewModel(
     class Factory(
         private val chatRepository: ChatRepository,
         private val friendRepository: FriendRepository,
+        private val userRepository: UserRepository,
         private val socketManager: ChatSocketManager
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
-                return ChatViewModel(chatRepository, friendRepository, socketManager) as T
+                return ChatViewModel(chatRepository, friendRepository, userRepository, socketManager) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
