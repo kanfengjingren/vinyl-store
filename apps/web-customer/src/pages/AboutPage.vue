@@ -45,7 +45,13 @@
 
           <div class="border-t border-[#e5e5ea] pt-6">
             <h3 class="text-[20px] font-semibold text-[#1d1d1f] mb-3">Android 客户端</h3>
-            <span class="inline-block text-[15px] text-[#6e6e73] bg-[#f2f2f6] rounded-lg px-6 py-2">即将上线</span>
+            <a
+              href="/downloads/app-prod-debug.apk"
+              class="inline-flex items-center gap-2 text-[15px] font-medium text-white bg-[#0071e3] hover:bg-[#0077ed] rounded-full px-8 py-3 transition-colors no-underline"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              下载 APK
+            </a>
           </div>
         </div>
       </div>
